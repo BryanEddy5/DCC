@@ -1,4 +1,4 @@
-﻿#region Licence
+#region Licence
 
 // Distributed under MIT License
 // ===========================================================
@@ -134,6 +134,48 @@ namespace CameraControl.Core.Classes
                     SendData(context, Encoding.ASCII.GetBytes(s));
                 }
 
+                if (context.Request.Uri.AbsolutePath.StartsWith("/jsonp.api"))
+                {
+                    // var operation = context.Request.QueryString["operation"];
+                    var operation = context.Request.QueryString["operation"];
+
+                    // someCallBackString({ The Object });
+                    var jsoncallback = context.Request.QueryString["jsoncallback"];
+
+                    if ("capture".Equals(operation))
+                    {
+                        string camera = context.Request.QueryString["camera"];
+                        string param1 = context.Request.QueryString["param1"] ?? "";
+                        string param2 = context.Request.QueryString["param2"] ?? "";
+                        string[] args = new[] { operation, param1, param2 };
+                        string response = TakePicture(camera, args);
+                        FileItem item = ServiceProvider.Settings.DefaultSession.Files.Last();
+                        int id = item.Id;
+
+                        response = JsonConvert.ToString(response);
+                        var s = jsoncallback + "({\"response\":" + response + ", \"id\":" + id + "});";
+                        SendData(context, Encoding.ASCII.GetBytes(s));
+                    }
+                    else
+                    {
+                        FileItem item = ServiceProvider.Settings.DefaultSession.Files.Last();
+
+                        string filename = item.FileName;
+
+                        byte[] imageBytes = File.ReadAllBytes(filename);
+                        // var s = JsonConvert.SerializeObject(ServiceProvider.Settings.DefaultSession, Formatting.Indented);
+                        // byte[] imageBytes = ServiceProvider.DeviceManager.LiveViewImage[ServiceProvider.DeviceManager.SelectedCameraDevic];
+                        string imageDataBase64 = Convert.ToBase64String(imageBytes);
+                        int length = imageDataBase64.Length;
+
+                        filename = JsonConvert.ToString(filename);
+                        imageDataBase64 = JsonConvert.ToString(imageDataBase64);
+                        var s = jsoncallback + "({\"filename\":" + filename + ", \"length\":" + length + ", \"id\":" + item.Id
+                            + ", \"imageDataBase64\":" + imageDataBase64 + "});";
+                        SendData(context, Encoding.ASCII.GetBytes(s));
+                    }
+                }
+
                 if (context.Request.Uri.AbsolutePath.StartsWith("/settings.json"))
                 {
                     var s = JsonConvert.SerializeObject(ServiceProvider.Settings, Formatting.Indented);
@@ -184,32 +226,9 @@ namespace CameraControl.Core.Classes
                 var slc = context.Request.QueryString["slc"];
                 if (ServiceProvider.Settings.AllowWebserverActions && !string.IsNullOrEmpty(slc))
                 {
-                    string response = "";
-                    try
-                    {
-                        var processor = new CommandLineProcessor();
-                        processor.SetCamera(context.Request.QueryString["camera"]);
-                        var resp = processor.Pharse(new[] { context.Request.QueryString["slc"], context.Request.QueryString["param1"], context.Request.QueryString["param2"] });
-                        var list = resp as IEnumerable<string>;
-                        if (list != null)
-                        {
-                            foreach (var o in list)
-                            {
-                                response += o + "\n";
-                            }
-                        }
-                        else
-                        {
-                            if (resp != null)
-                                response = resp.ToString();
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        response = ex.Message;
-                    }
-                    if (string.IsNullOrEmpty(response))
-                        response = "OK";
+                    string camera = context.Request.QueryString["camera"];
+                    string[] args = new[] { context.Request.QueryString["slc"], context.Request.QueryString["param1"], context.Request.QueryString["param2"] };
+                    string response = TakePicture(camera, args);
 
                     byte[] buffer = Encoding.UTF8.GetBytes(response);
 
@@ -272,6 +291,38 @@ namespace CameraControl.Core.Classes
                 Log.Error("Web server error", ex);
             }
             return ModuleResult.Continue;
+        }
+
+        private string TakePicture(string camera, string[] args)
+        {
+            string response = "";
+            try
+            {
+                var processor = new CommandLineProcessor();
+                processor.SetCamera(camera);
+                var resp = processor.Pharse(args);
+                var list = resp as IEnumerable<string>;
+                if (list != null)
+                {
+                    foreach (var o in list)
+                    {
+                        response += o + "\n";
+                    }
+                }
+                else
+                {
+                    if (resp != null)
+                        response = resp.ToString();
+                }
+            }
+            catch (Exception ex)
+            {
+                response = ex.Message;
+            }
+            if (string.IsNullOrEmpty(response))
+                response = "OK";
+
+            return response;
         }
 
         private void SendFile(IHttpContext context, string fullpath)

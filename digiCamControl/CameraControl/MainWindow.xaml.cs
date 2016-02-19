@@ -1,4 +1,4 @@
-﻿#region Licence
+#region Licence
 
 // Distributed under MIT License
 // ===========================================================
@@ -61,6 +61,8 @@ using MessageBox = System.Windows.MessageBox;
 //using MessageBox = System.Windows.Forms.MessageBox;
 using Path = System.IO.Path;
 using Timer = System.Timers.Timer;
+
+using ImageMagick;
 
 #endregion
 
@@ -487,6 +489,9 @@ namespace CameraControl
 
                 File.Copy(tempFile, fileName);
 
+                // fix rotation as soon as possible, before thumbnail generation, etc.
+                RotateImage(fileName);
+
                 string backupfile = null;
                 if (session.BackUp)
                 {
@@ -620,6 +625,19 @@ namespace CameraControl
             // not indicated to be used 
             GC.Collect();
             //GC.WaitForPendingFinalizers();
+        }
+
+        private void RotateImage(string fileName)
+        {
+            // if (item.AutoRotation > 0)
+            {
+                MagickImage image = new MagickImage(fileName);
+                // image.Rotate(270);
+                image.AutoOrient();
+                image.Format = MagickFormat.Jpeg;
+                // Save the result
+                image.Write(fileName);
+            }
         }
 
         public RelayCommand<CameraPreset> SelectPresetCommand { get; private set; }
