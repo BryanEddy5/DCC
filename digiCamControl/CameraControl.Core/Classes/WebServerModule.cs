@@ -40,6 +40,7 @@ using Griffin.WebServer;
 using Griffin.WebServer.Files;
 using Griffin.WebServer.Modules;
 using Newtonsoft.Json;
+using Griffin.Net.Protocols.Http;
 
 #endregion
 
@@ -83,12 +84,18 @@ namespace CameraControl.Core.Classes
                 {
                     string str = context.Request.Uri.Scheme + "://" + context.Request.Uri.Host;
                     if (context.Request.Uri.Port != 80)
-                        str = str + (object) ":" + context.Request.Uri.Port;
+                        str = str + (object)":" + context.Request.Uri.Port;
                     string uriString = str + context.Request.Uri.AbsolutePath + "index.html";
                     if (!string.IsNullOrEmpty(context.Request.Uri.Query))
-                        uriString = uriString + "?" + context.Request.Uri.Query;
+                    {
+                        // this is for backward compatibility with old Griffin.WebServer
+                        string questionMark = !context.Request.Uri.Query.StartsWith("?") ? "?" : "";
+                        uriString = uriString + questionMark + context.Request.Uri.Query;
+                    }
                     context.Request.Uri = new Uri(uriString);
                 }
+
+                var queryString = ((HttpRequest)context.Request).QueryString;
 
                 if (context.Request.Uri.AbsolutePath.StartsWith("/thumb/large"))
                 {
@@ -137,16 +144,16 @@ namespace CameraControl.Core.Classes
                 if (context.Request.Uri.AbsolutePath.StartsWith("/jsonp.api"))
                 {
                     // var operation = context.Request.QueryString["operation"];
-                    var operation = context.Request.QueryString["operation"];
+                    var operation = queryString["operation"];
 
                     // someCallBackString({ The Object });
-                    var jsoncallback = context.Request.QueryString["jsoncallback"];
+                    var jsoncallback = queryString["jsoncallback"];
 
                     if ("capture".Equals(operation))
                     {
-                        string camera = context.Request.QueryString["camera"];
-                        string param1 = context.Request.QueryString["param1"] ?? "";
-                        string param2 = context.Request.QueryString["param2"] ?? "";
+                        string camera = queryString["camera"];
+                        string param1 = queryString["param1"] ?? "";
+                        string param2 = queryString["param2"] ?? "";
                         string[] args = new[] { operation, param1, param2 };
                         string response = TakePicture(camera, args);
                         FileItem item = ServiceProvider.Settings.DefaultSession.Files.Last();
@@ -223,11 +230,11 @@ namespace CameraControl.Core.Classes
                     }
                 }
 
-                var slc = context.Request.QueryString["slc"];
+                var slc = queryString["slc"];
                 if (ServiceProvider.Settings.AllowWebserverActions && !string.IsNullOrEmpty(slc))
                 {
-                    string camera = context.Request.QueryString["camera"];
-                    string[] args = new[] { context.Request.QueryString["slc"], context.Request.QueryString["param1"], context.Request.QueryString["param2"] };
+                    string camera = queryString["camera"];
+                    string[] args = new[] { queryString["slc"], queryString["param1"], queryString["param2"] };
                     string response = TakePicture(camera, args);
 
                     byte[] buffer = Encoding.UTF8.GetBytes(response);
@@ -281,8 +288,8 @@ namespace CameraControl.Core.Classes
                         SendFile(context, fullpath);
                     }
                 }
-                string cmd = context.Request.QueryString["CMD"];
-                string param = context.Request.QueryString["PARAM"];
+                string cmd = queryString["CMD"];
+                string param = queryString["PARAM"];
                 if (ServiceProvider.Settings.AllowWebserverActions && !string.IsNullOrEmpty(cmd))
                     ServiceProvider.WindowsManager.ExecuteCommand(cmd, param);
             }

@@ -1,4 +1,4 @@
-﻿#region Licence
+#region Licence
 
 // Distributed under MIT License
 // ===========================================================
@@ -34,11 +34,12 @@ using System.Linq;
 using System.Net;
 using System.Text;
 using CameraControl.Devices;
-using Griffin.Networking.Protocol.Http.Services.BodyDecoders;
+// using Griffin.Networking.Protocol.Http.Services.BodyDecoders;
 using Griffin.WebServer;
 using Griffin.WebServer.Files;
 using Griffin.WebServer.Modules;
 using Griffin.WebServer.Routing;
+using System.Security.Cryptography.X509Certificates;
 
 #endregion
 
@@ -67,10 +68,17 @@ namespace CameraControl.Core.Classes
 
                 //moduleManager.Add(new BodyDecodingModule(new UrlFormattedDecoder()));
 
+                var baseDirectory = AppDomain.CurrentDomain.BaseDirectory;
+                // from Griffin.Framework\samples\Networking\CustomProtocol\DemoTest\DemoTest\bin\Debug\Net\cert
+                var certificate =  // new X509Certificate2("GriffinNetworkingTemp.pfx", "somepassword");
+                                    new X509Certificate2(baseDirectory +
+                                                    "\\Net\\cert\\GriffinNetworkingTemp.pfx", "mamma");
+
                 // And start the server.
                 var server = new HttpServer(moduleManager);
 
-                server.Start(IPAddress.Any, port);
+                // server.Start(IPAddress.Any, port);
+                server.Start(IPAddress.Any, port, certificate);
             }
             catch (Exception ex)
             {
