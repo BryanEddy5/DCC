@@ -1,4 +1,4 @@
-﻿#region Licence
+#region Licence
 
 // Distributed under MIT License
 // ===========================================================
@@ -42,6 +42,18 @@ namespace CameraControl.Core.Classes
 {
     public static class CameraHelper
     {
+        private static Semaphore _semaphore = new Semaphore(0, 1);
+
+        public static void WaitPhotoProcessed()
+        {
+            _semaphore.WaitOne();
+        }
+
+        public static void SignalPhotoProcessed()
+        {
+            _semaphore.Release();
+        }
+
         /// <summary>
         /// Captures the specified camera device.
         /// </summary>

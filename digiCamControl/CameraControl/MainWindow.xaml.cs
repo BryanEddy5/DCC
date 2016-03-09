@@ -383,6 +383,8 @@ namespace CameraControl
                     PhotoCaptured(eventArgs);
                 }
             }
+            CameraHelper.SignalPhotoProcessed();
+            StaticHelper.Instance.SystemMessage = "Photo Ready";
         }
 
         /// <summary>
@@ -488,6 +490,7 @@ namespace CameraControl
                 }
 
                 File.Copy(tempFile, fileName);
+                StaticHelper.Instance.SystemMessage = "Photo Captured";
 
                 // fix rotation as soon as possible, before thumbnail generation, etc.
                 RotateImage(fileName);
@@ -539,6 +542,10 @@ namespace CameraControl
                         
                     }
                 }));
+
+                // cth - get thumbnails generated before we return
+                // BitmapLoader.Instance.GenerateCache(_selectedItem);
+                CreateQuickThumb(fileName, _selectedItem.QuickThumb);
 
                 foreach (AutoExportPluginConfig plugin in ServiceProvider.Settings.DefaultSession.AutoExportPluginConfigs)
                 {
@@ -637,6 +644,25 @@ namespace CameraControl
                 image.Format = MagickFormat.Jpeg;
                 // Save the result
                 image.Write(fileName);
+            }
+        }
+
+        private void CreateQuickThumb(string fileName, string quickThumb)
+        {
+            try
+            {
+                using (MagickImage image = new MagickImage(fileName))
+                {
+                    double dw = (double)BitmapLoader.SmallThumbSize / image.Width;
+                    image.Thumbnail((int)(image.Width * dw), (int)(image.Height * dw));
+                    image.Unsharpmask(1, 1, 0.5, 0.1);
+                    // PhotoUtils.CreateFolder(fileItem.SmallThumb);
+                    image.Write(quickThumb);
+               }
+            }
+            catch (Exception exception)
+            {
+                Log.Error("Error creating quickThumb file " + quickThumb, exception);
             }
         }
 

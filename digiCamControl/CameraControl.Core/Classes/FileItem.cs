@@ -477,6 +477,17 @@ namespace CameraControl.Core.Classes
         public bool IsLoading { get; set; }
 
         /// <summary>
+        /// Gets the quick thumb file name.
+        /// </summary>
+        /// <value>
+        /// The quick thumb.
+        /// </value>
+        public string QuickThumb
+        {
+            get { return FileName == null ? "" : FileName.Replace(".jpg", "_preview.jpg"); }
+        }
+
+        /// <summary>
         /// Gets the small thumb file name.
         /// </summary>
         /// <value>

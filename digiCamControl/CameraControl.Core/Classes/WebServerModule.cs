@@ -130,6 +130,23 @@ namespace CameraControl.Core.Classes
                     }
                 }
 
+                if (context.Request.Uri.AbsolutePath.StartsWith("/thumb/quick"))
+                {
+                    string requestFile = Path.GetFileName(context.Request.Uri.AbsolutePath.Replace("/", "\\"));
+                    foreach (FileItem item in ServiceProvider.Settings.DefaultSession.Files)
+                    {
+                        if (Path.GetFileName(item.SmallThumb) == requestFile || item.Name == requestFile)
+                        {
+                            PhotoUtils.WaitForFile(item.QuickThumb);
+                            SendFile(context,
+                                !File.Exists(item.QuickThumb)
+                                    ? Path.Combine(Settings.WebServerFolder, "logo.png")
+                                    : item.QuickThumb);
+                            return ModuleResult.Continue;
+                        }
+                    }
+                }
+
                 if (context.Request.Uri.AbsolutePath.StartsWith("/preview.jpg"))
                 {
                     SendFile(context, ServiceProvider.Settings.SelectedBitmap.FileItem.LargeThumb);
@@ -156,11 +173,18 @@ namespace CameraControl.Core.Classes
                         string param2 = queryString["param2"] ?? "";
                         string[] args = new[] { operation, param1, param2 };
                         string response = TakePicture(camera, args);
+                        CameraHelper.WaitPhotoProcessed();
+
+                        var tst = ServiceProvider.DeviceManager.LiveViewImage[ServiceProvider.DeviceManager.SelectedCameraDevice];
+
                         FileItem item = ServiceProvider.Settings.DefaultSession.Files.Last();
+                        PhotoUtils.WaitForFile(item.FileName);
                         int id = item.Id;
+                        string filename = item.FileName;
 
                         response = JsonConvert.ToString(response);
-                        var s = jsoncallback + "({\"response\":" + response + ", \"id\":" + id + "});";
+                        filename = JsonConvert.ToString(filename);
+                        var s = jsoncallback + "({\"response\":" + response + ", \"filename\":" + filename + ", \"id\":" + id + "});";
                         SendData(context, Encoding.ASCII.GetBytes(s));
                     }
                     else
