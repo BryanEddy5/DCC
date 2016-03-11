@@ -158,6 +158,16 @@ namespace CameraControl.Core.Classes
                     SendData(context, Encoding.ASCII.GetBytes(s));
                 }
 
+                if (context.Request.Uri.AbsolutePath.StartsWith("/thumb/captured"))
+                {
+                    string quickThumb = ServiceProvider.DeviceManager.JustCapturedImagePreview[ServiceProvider.DeviceManager.SelectedCameraDevice];
+                            SendFile(context,
+                                !File.Exists(quickThumb)
+                                    ? Path.Combine(Settings.WebServerFolder, "logo.png")
+                                    : quickThumb);
+                            return ModuleResult.Continue;
+                }
+
                 if (context.Request.Uri.AbsolutePath.StartsWith("/jsonp.api"))
                 {
                     // var operation = context.Request.QueryString["operation"];
@@ -175,36 +185,39 @@ namespace CameraControl.Core.Classes
                         string response = TakePicture(camera, args);
                         CameraHelper.WaitPhotoProcessed();
 
-                        var tst = ServiceProvider.DeviceManager.LiveViewImage[ServiceProvider.DeviceManager.SelectedCameraDevice];
-
-                        FileItem item = ServiceProvider.Settings.DefaultSession.Files.Last();
-                        PhotoUtils.WaitForFile(item.FileName);
-                        int id = item.Id;
-                        string filename = item.FileName;
+                        var fileName = ServiceProvider.DeviceManager.JustCapturedImage[ServiceProvider.DeviceManager.SelectedCameraDevice];
+                        string id = ServiceProvider.DeviceManager.JustCapturedImageId[ServiceProvider.DeviceManager.SelectedCameraDevice]; ;
 
                         response = JsonConvert.ToString(response);
-                        filename = JsonConvert.ToString(filename);
-                        var s = jsoncallback + "({\"response\":" + response + ", \"filename\":" + filename + ", \"id\":" + id + "});";
+                        fileName = JsonConvert.ToString(fileName);
+                        id = JsonConvert.ToString(id);
+                        var s = jsoncallback + "({\"response\":" + response + ", \"filename\":" + fileName + ", \"id\":" + id + "});";
                         SendData(context, Encoding.ASCII.GetBytes(s));
                     }
-                    else
+                    else if ("upload".Equals(operation))
                     {
-                        FileItem item = ServiceProvider.Settings.DefaultSession.Files.Last();
+                        var fileName = ServiceProvider.DeviceManager.JustCapturedImage[ServiceProvider.DeviceManager.SelectedCameraDevice];
+                        string id = ServiceProvider.DeviceManager.JustCapturedImageId[ServiceProvider.DeviceManager.SelectedCameraDevice]; ;
 
-                        string filename = item.FileName;
-
-                        byte[] imageBytes = File.ReadAllBytes(filename);
+                        byte[] imageBytes = File.ReadAllBytes(fileName);
                         // var s = JsonConvert.SerializeObject(ServiceProvider.Settings.DefaultSession, Formatting.Indented);
                         // byte[] imageBytes = ServiceProvider.DeviceManager.LiveViewImage[ServiceProvider.DeviceManager.SelectedCameraDevic];
                         string imageDataBase64 = Convert.ToBase64String(imageBytes);
                         int length = imageDataBase64.Length;
 
-                        filename = JsonConvert.ToString(filename);
+                        fileName = JsonConvert.ToString(fileName);
+                        id = JsonConvert.ToString(id);
                         imageDataBase64 = JsonConvert.ToString(imageDataBase64);
-                        var s = jsoncallback + "({\"filename\":" + filename + ", \"length\":" + length + ", \"id\":" + item.Id
+                        var s = jsoncallback + "({\"filename\":" + fileName + ", \"length\":" + length + ", \"id\":" + id
                             + ", \"imageDataBase64\":" + imageDataBase64 + "});";
                         SendData(context, Encoding.ASCII.GetBytes(s));
                     }
+                    else
+                    {
+                        Log.Error("Unknown JSONP operation: " + operation);
+                    }
+
+                    // return ModuleResult.Continue;
                 }
 
                 if (context.Request.Uri.AbsolutePath.StartsWith("/settings.json"))

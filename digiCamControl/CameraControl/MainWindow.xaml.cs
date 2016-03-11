@@ -383,7 +383,7 @@ namespace CameraControl
                     PhotoCaptured(eventArgs);
                 }
             }
-            CameraHelper.SignalPhotoProcessed();
+
             StaticHelper.Instance.SystemMessage = "Photo Ready";
         }
 
@@ -489,11 +489,23 @@ namespace CameraControl
                     Directory.CreateDirectory(Path.GetDirectoryName(fileName));
                 }
 
-                File.Copy(tempFile, fileName);
+                // CopyRotateThumbImage includes the copy now
+                // File.Copy(tempFile, fileName);
+
                 StaticHelper.Instance.SystemMessage = "Photo Captured";
 
-                // fix rotation as soon as possible, before thumbnail generation, etc.
-                RotateImage(fileName);
+                var watch = System.Diagnostics.Stopwatch.StartNew();
+                string quickThumb = CopyRotateThumbImage(tempFile, fileName);
+                watch.Stop();
+                Log.Debug("ms for CopyRotateThumbImage " + watch.ElapsedMilliseconds);
+
+                ServiceProvider.DeviceManager.JustCapturedImageId[ServiceProvider.DeviceManager.SelectedCameraDevice] = Guid.NewGuid().ToString("N");
+                ServiceProvider.DeviceManager.JustCapturedImage[ServiceProvider.DeviceManager.SelectedCameraDevice] = fileName;
+                ServiceProvider.DeviceManager.JustCapturedImagePreview[ServiceProvider.DeviceManager.SelectedCameraDevice] = quickThumb;
+
+                CameraHelper.SignalPhotoProcessed();
+
+                StaticHelper.Instance.SystemMessage = "Photo Ready for upload";
 
                 string backupfile = null;
                 if (session.BackUp)
@@ -542,10 +554,6 @@ namespace CameraControl
                         
                     }
                 }));
-
-                // cth - get thumbnails generated before we return
-                // BitmapLoader.Instance.GenerateCache(_selectedItem);
-                CreateQuickThumb(fileName, _selectedItem.QuickThumb);
 
                 foreach (AutoExportPluginConfig plugin in ServiceProvider.Settings.DefaultSession.AutoExportPluginConfigs)
                 {
@@ -647,8 +655,39 @@ namespace CameraControl
             }
         }
 
-        private void CreateQuickThumb(string fileName, string quickThumb)
+        private string CopyRotateThumbImage(string source, string rotated)
         {
+            // Avoid reading the file multiple times
+            // Read it once to start the process and output copy, rotated, thumb
+
+            string quickThumb = rotated.Replace(".jpg", "_preview.jpg");
+            // if (item.AutoRotation > 0)
+            try
+            {
+                MagickImage image = new MagickImage(source);
+                // image.Rotate(270);
+                image.AutoOrient();
+                image.Format = MagickFormat.Jpeg;
+                // Save the result
+                image.Write(rotated);
+
+                double dw = (double)BitmapLoader.SmallThumbSize / image.Width;
+                image.Thumbnail((int)(image.Width * dw), (int)(image.Height * dw));
+                image.Unsharpmask(1, 1, 0.5, 0.1);
+                // PhotoUtils.CreateFolder(fileItem.SmallThumb);
+                image.Write(quickThumb);
+            }
+            catch (Exception exception)
+            {
+                Log.Error("Error in CopyRotateThumbImage: " + rotated, exception);
+            }
+
+            return quickThumb;
+        }
+
+        private string CreateQuickThumb(string fileName)
+        {
+            string quickThumb = fileName.Replace(".jpg", "_preview.jpg");
             try
             {
                 using (MagickImage image = new MagickImage(fileName))
@@ -664,6 +703,8 @@ namespace CameraControl
             {
                 Log.Error("Error creating quickThumb file " + quickThumb, exception);
             }
+
+            return quickThumb;
         }
 
         public RelayCommand<CameraPreset> SelectPresetCommand { get; private set; }
