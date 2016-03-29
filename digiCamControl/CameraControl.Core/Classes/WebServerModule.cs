@@ -176,6 +176,7 @@ namespace CameraControl.Core.Classes
                     // someCallBackString({ The Object });
                     var jsoncallback = queryString["jsoncallback"];
 
+                    Log.Debug("jsonp.api operation is " + operation);
                     if ("capture".Equals(operation))
                     {
                         string camera = queryString["camera"];
@@ -183,6 +184,7 @@ namespace CameraControl.Core.Classes
                         string param2 = queryString["param2"] ?? "";
                         string[] args = new[] { operation, param1, param2 };
                         string response = TakePicture(camera, args);
+                        Log.Debug("TakePicture respose is :" + response);
                         CameraHelper.WaitPhotoProcessed();
 
                         var fileName = ServiceProvider.DeviceManager.JustCapturedImage[ServiceProvider.DeviceManager.SelectedCameraDevice];
@@ -197,7 +199,8 @@ namespace CameraControl.Core.Classes
                     else if ("upload".Equals(operation))
                     {
                         var fileName = ServiceProvider.DeviceManager.JustCapturedImage[ServiceProvider.DeviceManager.SelectedCameraDevice];
-                        string id = ServiceProvider.DeviceManager.JustCapturedImageId[ServiceProvider.DeviceManager.SelectedCameraDevice]; ;
+                        string id = ServiceProvider.DeviceManager.JustCapturedImageId[ServiceProvider.DeviceManager.SelectedCameraDevice];
+                        string dateString = "2016-02-15-08-32-55";
 
                         byte[] imageBytes = File.ReadAllBytes(fileName);
                         // var s = JsonConvert.SerializeObject(ServiceProvider.Settings.DefaultSession, Formatting.Indented);
@@ -207,9 +210,10 @@ namespace CameraControl.Core.Classes
 
                         fileName = JsonConvert.ToString(fileName);
                         id = JsonConvert.ToString(id);
+                        dateString = JsonConvert.ToString(dateString);
                         imageDataBase64 = JsonConvert.ToString(imageDataBase64);
                         var s = jsoncallback + "({\"filename\":" + fileName + ", \"length\":" + length + ", \"id\":" + id
-                            + ", \"imageDataBase64\":" + imageDataBase64 + "});";
+                            + ", \"dateString\":" + dateString + ", \"imageDataBase64\":" + imageDataBase64 + "});";
                         SendData(context, Encoding.ASCII.GetBytes(s));
                     }
                     else
@@ -226,13 +230,21 @@ namespace CameraControl.Core.Classes
                     SendData(context, Encoding.ASCII.GetBytes(s));
                 }
 
-                if (context.Request.Uri.AbsolutePath.StartsWith("/liveview.jpg") &&
-                    ServiceProvider.DeviceManager.SelectedCameraDevice != null &&
-                    ServiceProvider.DeviceManager.LiveViewImage.ContainsKey(
-                        ServiceProvider.DeviceManager.SelectedCameraDevice))
+                if (context.Request.Uri.AbsolutePath.StartsWith("/liveview.jpg"))
                 {
-                    SendDataFile(context,
-                        ServiceProvider.DeviceManager.LiveViewImage[ServiceProvider.DeviceManager.SelectedCameraDevice], MimeTypeProvider.Instance.Get("liveview.jpg"));
+                    if (
+                        ServiceProvider.DeviceManager.SelectedCameraDevice != null &&
+                        ServiceProvider.DeviceManager.LiveViewImage.ContainsKey(
+                        ServiceProvider.DeviceManager.SelectedCameraDevice))
+                    {
+                        SendDataFile(context,
+                            ServiceProvider.DeviceManager.LiveViewImage[ServiceProvider.DeviceManager.SelectedCameraDevice], MimeTypeProvider.Instance.Get("liveview.jpg"));
+                    }
+                    else
+                    {
+                        Log.Debug("Could not get liveview.jpg");
+                        Log.Debug("ServiceProvider.DeviceManager.SelectedCameraDevice is " + ServiceProvider.DeviceManager.SelectedCameraDevice);
+                    }
                 }
 
                 if (context.Request.Uri.AbsolutePath.StartsWith("/liveviewwebcam.jpg") &&

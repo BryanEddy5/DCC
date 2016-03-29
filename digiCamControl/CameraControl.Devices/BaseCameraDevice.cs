@@ -63,6 +63,7 @@ namespace CameraControl.Devices
             set
             {
                 _haveLiveView = value;
+                Log.Debug("_haveLiveView changed to " + _haveLiveView);
                 NotifyPropertyChanged("HaveLiveView");
             }
         }

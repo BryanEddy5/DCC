@@ -551,7 +551,7 @@ namespace CameraControl
                     }
                     catch (Exception ex)
                     {
-                        
+                        Log.Debug("Exception while creating new FileItem: " + ex);
                     }
                 }));
 

@@ -1,4 +1,4 @@
-﻿#region Licence
+#region Licence
 
 // Distributed under MIT License
 // ===========================================================
@@ -193,7 +193,7 @@ namespace CameraControl.Core.Classes
             OnlineReference = true;
             ShowStartupScreen = true;
             ShowStartupScreenAnimation = true;
-            ShowWelcomeScreen = true;
+            ShowWelcomeScreen = false; // true;
             CheckForUpdate = true;
             ShowRefreshButtonMainWindow = true;
             ShowDownloadButtonMainWindow = true;
