@@ -82,6 +82,7 @@ namespace CameraControl.Core.Classes
                         string data = client.DownloadString("http://127.0.0.1:4040/api/tunnels");
                         dynamic json = Newtonsoft.Json.JsonConvert.DeserializeObject(data);
                         string url = json.tunnels[0].public_url;
+                        url = null; // cth - stay off the internet
                         if (!string.IsNullOrEmpty(url))
                         {
                             client.DownloadString(

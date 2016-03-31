@@ -947,7 +947,7 @@ namespace CameraControl.Devices.Canon
             }
             catch (Exception exception)
             {
-                Log.Debug("Error get EC", exception);
+                Log.Debug("Error get WB", exception);
             }
         }
 
