@@ -71,7 +71,9 @@ namespace CameraControl.Core.Classes
                 if (ServiceProvider.Settings.UseWebserver)
                 {
                     WebServer.Start(ServiceProvider.Settings.WebserverPort);
+                    return; // cth - this is all we need
                     string file = Path.Combine(Settings.ApplicationFolder, "ngrok.exe");
+                    // cth - this can pop up a permissions window
                     _ngrok_process = PhotoUtils.Run(file, "http " + ServiceProvider.Settings.WebserverPort,
                         ProcessWindowStyle.Hidden);
                     if (_ngrok_process == null)

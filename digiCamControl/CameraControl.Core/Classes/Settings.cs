@@ -996,7 +996,7 @@ namespace CameraControl.Core.Classes
             DisableNativeDrivers = false;
             AutoPreview = true;
             LastUpdateCheckDate = DateTime.MinValue;
-            UseWebserver = false;
+            UseWebserver = true; // was false, but we need this - CTH
             WebserverPort = 5513;
             Preview = false;
             PreviewSeconds = 3;
