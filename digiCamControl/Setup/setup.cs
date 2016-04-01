@@ -28,7 +28,7 @@ namespace Setup
                 new File(appFeature, "CameraControlRemoteCmd.exe"),
                 new File(appFeature, "dcraw.exe"),
                 new File(appFeature, "ffmpeg.exe"),
-                new File(appFeature, "ngrok.exe"),
+                // new File(appFeature, "ngrok.exe"), // removed - cth
                 new File(appFeature, "MtpTester.exe"),
                 //new File(appFeature, "PhotoBooth.exe",new FileShortcut(appFeature, "PhotoBooth", @"%ProgramMenu%\digiCamControl")),
                 new DirFiles(appFeature, @"*.dll"),
