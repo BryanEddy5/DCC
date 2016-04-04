@@ -7,11 +7,14 @@ xcopy %1CameraControl.Application\*.* %1CameraControl\Bin\%2\ /Y
 
 rem Copy additional Files
 if not exist %1CameraControl\Bin\%2\Plugins MD %1CameraControl\Bin\%2\Plugins
-rem copy %1CameraControl.Plugins\Bin\%2\CameraControl.Plugins.* %1CameraControl\Bin\%2\Plugins\ /Y 
+rem copy %1CameraControl.Plugins\Bin\%2\CameraControl.Plugins.* %1CameraControl\Bin\%2\Plugins\ /Y
+
+rem Copy any certificates
+xcopy %1CameraControl\Net\cert\*.pfx %1CameraControl\Bin\%2\Net\cert /Y /E /R /I
 
 REM Moved to MtpTester to avoid build order issues
-REM copy %1MtpTester\Bin\%2\MtpTester.exe %1CameraControl\Bin\%2\ /Y 
+REM copy %1MtpTester\Bin\%2\MtpTester.exe %1CameraControl\Bin\%2\ /Y
 REM echo %ERRORLEVEL% >> c:/temp/tmp.txt
 REM Moved to DccObsPlugin to avoid build order issues
-REM copy %1DccObsPlugin\Bin\%2\DccObsPlugin.dll %1CameraControl\Bin\%2\ObsPlugin\CLRHostPlugin\ /Y 
+REM copy %1DccObsPlugin\Bin\%2\DccObsPlugin.dll %1CameraControl\Bin\%2\ObsPlugin\CLRHostPlugin\ /Y
 REM echo %ERRORLEVEL% >> c:/temp/tmp.txt

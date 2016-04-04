@@ -695,9 +695,9 @@ namespace CameraControl.Core.Classes
                 serializer.Serialize(writer, FileInfo);
                 writer.Close();
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                Log.Error("Unable to save session branding file");
+                Log.Error("Unable to save session branding file", ex);
             }
         }
 
@@ -717,7 +717,7 @@ namespace CameraControl.Core.Classes
             }
             catch (Exception e)
             {
-                Log.Error(e);
+                Log.Error("Can't LoadInfo", e);
             }
         }
 
