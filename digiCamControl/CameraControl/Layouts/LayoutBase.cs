@@ -1,4 +1,4 @@
-﻿#region Licence
+#region Licence
 
 // Distributed under MIT License
 // ===========================================================
@@ -139,7 +139,7 @@ namespace CameraControl.Layouts
             }
         }
 
-        private void DeleteItem()
+        private void DeleteItem(bool bypassConfirmation)
         {
             List<FileItem> filestodelete = new List<FileItem>();
             try
@@ -156,17 +156,21 @@ namespace CameraControl.Layouts
                     return;
                 int selectedindex = ImageLIst.Items.IndexOf(filestodelete[0]);
 
-                bool delete = false;
-                if (filestodelete.Count > 1)
+                bool delete = true;
+                if (!bypassConfirmation)
                 {
-                    delete = MessageBox.Show("Multile files are selected !! Do you really want to delete selected files ?", "Delete files",
-                        MessageBoxButton.YesNo) == MessageBoxResult.Yes;
-                }
-                else
-                {
-                    delete = MessageBox.Show("Do you really want to delete selected file ?", "Delete file",
-                        MessageBoxButton.YesNo) == MessageBoxResult.Yes;
+                    delete = false;
+                    if (filestodelete.Count > 1)
+                    {
+                        delete = MessageBox.Show("Multile files are selected !! Do you really want to delete selected files ?", "Delete files",
+                            MessageBoxButton.YesNo) == MessageBoxResult.Yes;
+                    }
+                    else
+                    {
+                        delete = MessageBox.Show("Do you really want to delete selected file ?", "Delete file",
+                            MessageBoxButton.YesNo) == MessageBoxResult.Yes;
 
+                    }
                 }
                 if (delete)
                 {
@@ -497,7 +501,8 @@ namespace CameraControl.Layouts
                         break;
                     case WindowsCmdConsts.Del_Image:
                     {
-                        DeleteItem();
+                        Boolean bypassConfirmation = o != null && (Boolean) o;
+                        DeleteItem(bypassConfirmation);
                     }
                         break;
                     case WindowsCmdConsts.Select_Image:

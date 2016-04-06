@@ -193,7 +193,7 @@ namespace CameraControl.Core.Classes
         private int _sortOrder;
         private WindowCommandItem _keyTrigger;
         private int _delay;
-        private bool _liveViewInSecMonitor;
+        // private bool _liveViewInSecMonitor; // this is never used - cth
         private bool _saveLiveViewWindow;
 
         public LiveviewSettings LiveviewSettings

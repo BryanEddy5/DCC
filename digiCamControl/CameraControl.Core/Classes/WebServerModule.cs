@@ -41,6 +41,7 @@ using Griffin.WebServer.Files;
 using Griffin.WebServer.Modules;
 using Newtonsoft.Json;
 using Griffin.Net.Protocols.Http;
+using System.Runtime.CompilerServices;
 
 #endregion
 
@@ -179,6 +180,12 @@ namespace CameraControl.Core.Classes
                     Log.Debug("jsonp.api operation is " + operation);
                     if ("capture".Equals(operation))
                     {
+                        // Mark any previous images for deletion
+                        foreach (FileItem item in ServiceProvider.Settings.DefaultSession.Files)
+                        {
+                            item.IsChecked = true;
+                        }
+
                         string camera = queryString["camera"];
                         string param1 = queryString["param1"] ?? "";
                         string param2 = queryString["param2"] ?? "";
@@ -186,6 +193,10 @@ namespace CameraControl.Core.Classes
                         string response = TakePicture(camera, args);
                         Log.Debug("TakePicture respose is :" + response);
                         CameraHelper.WaitPhotoProcessed();
+
+                        // Remove any previous image
+                        ServiceProvider.WindowsManager.ExecuteCommand(WindowsCmdConsts.Del_Image, true);
+                        Log.Debug("Called ExecuteCommand with WindowsCmdConsts.Del_Image");
 
                         var fileName = ServiceProvider.DeviceManager.JustCapturedImage[ServiceProvider.DeviceManager.SelectedCameraDevice];
                         string id = ServiceProvider.DeviceManager.JustCapturedImageId[ServiceProvider.DeviceManager.SelectedCameraDevice]; ;
@@ -232,6 +243,7 @@ namespace CameraControl.Core.Classes
 
                 if (context.Request.Uri.AbsolutePath.StartsWith("/liveview.jpg"))
                 {
+                    StartLiveViewIfNeeded();
                     if (
                         ServiceProvider.DeviceManager.SelectedCameraDevice != null &&
                         ServiceProvider.DeviceManager.LiveViewImage.ContainsKey(
@@ -250,14 +262,7 @@ namespace CameraControl.Core.Classes
                 if (context.Request.Uri.AbsolutePath.StartsWith("/liveviewwebcam.jpg") &&
                     ServiceProvider.DeviceManager.SelectedCameraDevice != null )
                 {
-                    if (_liveViewFirstRun)
-                    {
-                        ServiceProvider.WindowsManager.ExecuteCommand(WindowsCmdConsts.LiveViewWnd_Show);
-                        Thread.Sleep(500);
-                        ServiceProvider.WindowsManager.ExecuteCommand(CmdConsts.All_Minimize);
-                        ServiceProvider.WindowsManager.ExecuteCommand(CmdConsts.LiveView_NoProcess);
-                        _liveViewFirstRun = false;
-                    }
+                    StartLiveViewIfNeeded();
                     if (ServiceProvider.DeviceManager.LiveViewImage.ContainsKey(
                         ServiceProvider.DeviceManager.SelectedCameraDevice))
                         SendDataFile(context,
@@ -342,9 +347,13 @@ namespace CameraControl.Core.Classes
                 if (ServiceProvider.Settings.AllowWebserverActions && !string.IsNullOrEmpty(cmd))
                     ServiceProvider.WindowsManager.ExecuteCommand(cmd, param);
             }
+            catch (IOException ioe)
+            {
+                Log.Error("Web server IOException", ioe);
+            }
             catch (Exception ex)
             {
-                Log.Error("Web server error", ex);
+                Log.Error("Web server Exception", ex);
             }
             return ModuleResult.Continue;
         }
@@ -431,6 +440,20 @@ namespace CameraControl.Core.Classes
             return Path.Combine(Settings.WebServerFolder,
                 Uri.UnescapeDataString(uri.AbsolutePath.Remove(0, 1)).TrimStart(new[] {'/'})
                     .Replace('/', '\\'));
+        }
+
+        [MethodImpl(MethodImplOptions.Synchronized)]
+        private void StartLiveViewIfNeeded()
+        {
+            if (_liveViewFirstRun)
+            {
+                ServiceProvider.WindowsManager.ExecuteCommand(WindowsCmdConsts.LiveViewWnd_Show);
+                Thread.Sleep(500);
+                ServiceProvider.WindowsManager.ExecuteCommand(CmdConsts.All_Minimize);
+                ServiceProvider.WindowsManager.ExecuteCommand(CmdConsts.LiveView_NoProcess);
+                _liveViewFirstRun = false;
+            }
+
         }
     }
 }

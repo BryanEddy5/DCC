@@ -1621,6 +1621,7 @@ namespace CameraControl.ViewModel
             }
             
             _totalframes++;
+            // Log.Debug("Grabbing frame " + _totalframes);
             if ((DateTime.Now - _framestart).TotalSeconds > 0)
                 Fps = (int)(_totalframes / (DateTime.Now - _framestart).TotalSeconds);
 

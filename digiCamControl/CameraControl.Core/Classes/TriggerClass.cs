@@ -54,6 +54,7 @@ namespace CameraControl.Core.Classes
         private static bool _eventIsBusy = false;
         private static bool _altPressed = false;
         private static bool _ctrlPressed = false;
+        private static bool _useNgrok = false; // we don't want ngrok
         private Process _ngrok_process = null;
         public TriggerClass()
         {
@@ -71,25 +72,27 @@ namespace CameraControl.Core.Classes
                 if (ServiceProvider.Settings.UseWebserver)
                 {
                     WebServer.Start(ServiceProvider.Settings.WebserverPort);
-                    return; // cth - this is all we need
-                    string file = Path.Combine(Settings.ApplicationFolder, "ngrok.exe");
-                    // cth - this can pop up a permissions window
-                    _ngrok_process = PhotoUtils.Run(file, "http " + ServiceProvider.Settings.WebserverPort,
-                        ProcessWindowStyle.Hidden);
-                    if (_ngrok_process == null)
-                        return;
-                    Thread.Sleep(2000);
-                    using (var client = new WebClient())
+                    if (_useNgrok)
                     {
-                        string data = client.DownloadString("http://127.0.0.1:4040/api/tunnels");
-                        dynamic json = Newtonsoft.Json.JsonConvert.DeserializeObject(data);
-                        string url = json.tunnels[0].public_url;
-                        url = null; // cth - stay off the internet
-                        if (!string.IsNullOrEmpty(url))
+                        string file = Path.Combine(Settings.ApplicationFolder, "ngrok.exe");
+                        // cth - this can pop up a permissions window
+                        _ngrok_process = PhotoUtils.Run(file, "http " + ServiceProvider.Settings.WebserverPort,
+                            ProcessWindowStyle.Hidden);
+                        if (_ngrok_process == null)
+                            return;
+                        Thread.Sleep(2000);
+                        using (var client = new WebClient())
                         {
-                            client.DownloadString(
-                                string.Format("http://digicamcontrol.com/remote/submit.php?id={0}&url={1}",
-                                    ServiceProvider.Settings.ClientId, url));
+                            string data = client.DownloadString("http://127.0.0.1:4040/api/tunnels");
+                            dynamic json = Newtonsoft.Json.JsonConvert.DeserializeObject(data);
+                            string url = json.tunnels[0].public_url;
+                            url = null; // cth - stay off the internet
+                            if (!string.IsNullOrEmpty(url))
+                            {
+                                client.DownloadString(
+                                    string.Format("http://digicamcontrol.com/remote/submit.php?id={0}&url={1}",
+                                        ServiceProvider.Settings.ClientId, url));
+                            }
                         }
                     }
                 }

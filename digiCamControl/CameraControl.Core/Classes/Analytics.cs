@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Diagnostics;
 using System.Reflection;
 using System.Threading.Tasks;
@@ -74,7 +74,7 @@ namespace CameraControl.Core.Classes
             }
             catch (Exception exception)
             {
-                //Log.Error("Analytics", exception);
+                Log.Error("Analytics Stop", exception);
             }
         }
 
@@ -102,7 +102,7 @@ namespace CameraControl.Core.Classes
             }
             catch (Exception exception)
             {
-              //  Log.Error("Analytics", exception);    
+                Log.Error("Analytics SendEventThread", exception);
             }
             
         }

@@ -1042,7 +1042,7 @@ namespace CameraControl.Core.Classes
             StartupWithWindows = false;
             LoadThumbsDownload = true;
             FullScreenInSecondaryMonitor = false;
-            SendUsageStatistics = true;
+            SendUsageStatistics = false; // was true, but we don't need this - cth
             ThumbHeigh = 100;
             CurrentThemeName = "Dark\\Blue";
             AllowWebserverActions = true;

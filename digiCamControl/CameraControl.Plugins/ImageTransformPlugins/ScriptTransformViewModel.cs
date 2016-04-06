@@ -79,7 +79,7 @@ namespace CameraControl.Plugins.ImageTransformPlugins
             }
             catch (Exception ex)
             {
-                Log.Error("Error");
+                Log.Error("Error calling Load", ex);
             }
         }
 
@@ -97,7 +97,7 @@ namespace CameraControl.Plugins.ImageTransformPlugins
             }
             catch (Exception ex)
             {
-                Log.Error("Error", ex);
+                Log.Error("Error calling Open", ex);
             }
         }
     }

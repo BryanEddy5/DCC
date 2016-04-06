@@ -51,6 +51,8 @@ namespace CameraControl.Core.Classes
         public const int LargeThumbSize = 1600;
         public const int SmallThumbSize = 400;
 
+        private bool _createHistograms = false; // we don't need these - cth
+
         private static BitmapLoader _instance;
 
         public static BitmapLoader Instance
@@ -309,6 +311,11 @@ namespace CameraControl.Core.Classes
 
         public void LoadHistogram(FileItem item)
         {
+            if (!_createHistograms)
+            {
+                return;
+            }
+
             try
             {
                 var fileInfo = item.FileInfo;
@@ -651,16 +658,17 @@ namespace CameraControl.Core.Classes
 
                 if (fileItem.FileInfo.ExifTags.ContainName("Exif.Image.Orientation"))
                 {
-                    if (fileItem.FileInfo.ExifTags["Exif.Image.Orientation"] == "bottom, right")
+                    string orientation = fileItem.FileInfo.ExifTags["Exif.Image.Orientation"];
+                    if (orientation == "bottom, right")
                         fileItem.AutoRotation = 2;
 
-                    //if (fileItem.FileInfo.ExifTags["Exif.Image.Orientation"] == "top, left")
+                    //if (orientation == "top, left")
                     //    writeableBitmap = writeableBitmap.Rotate(180);
 
-                    if (fileItem.FileInfo.ExifTags["Exif.Image.Orientation"] == "right, top")
+                    if (orientation == "right, top")
                         fileItem.AutoRotation = 1;
 
-                    if (fileItem.FileInfo.ExifTags["Exif.Image.Orientation"] == "left, bottom")
+                    if (orientation == "left, bottom")
                         fileItem.AutoRotation = 3;
                 }
 

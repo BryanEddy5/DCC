@@ -19,6 +19,7 @@ using CameraControl.Core;
 using CameraControl.Core.Classes;
 using CameraControl.Core.Scripting;
 using CameraControl.Core.Wpf;
+using CameraControl.Devices;
 using ICSharpCode.AvalonEdit.CodeCompletion;
 using Path = System.IO.Path;
 
@@ -81,7 +82,7 @@ namespace CameraControl.Plugins.ImageTransformPlugins
             }
             catch (Exception ex)
             {
-                
+                Log.Error("Error calling LoadData", ex);
             }
         }
 

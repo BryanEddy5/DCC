@@ -552,6 +552,7 @@ namespace CameraControl.Core.Classes
         private int _rotation;
         private bool _transformed;
         private BitmapSource _thumbnailMarks;
+        private bool _cacheInfo = false; // we don't need cache info - cth
 
         public int RotationAngle
         {
@@ -681,7 +682,7 @@ namespace CameraControl.Core.Classes
 
         public void SaveInfo()
         {
-            if (FileInfo == null)
+            if (!_cacheInfo || FileInfo == null)
                 return;
             try
             {
@@ -705,7 +706,7 @@ namespace CameraControl.Core.Classes
         {
             try
             {
-                if (File.Exists(InfoFile))
+                if (_cacheInfo && File.Exists(InfoFile))
                 {
                     PhotoUtils.WaitForFile(InfoFile);
                     XmlSerializer mySerializer =

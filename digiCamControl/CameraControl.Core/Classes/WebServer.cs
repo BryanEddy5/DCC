@@ -58,7 +58,7 @@ namespace CameraControl.Core.Classes
                 var fileService = new DiskFileService("/", Settings.WebServerFolder);
 
                 // Create the file module and allow files to be listed.
-                var module = new FileModule(fileService) { ListFiles = false };
+                var module = new FileModule(fileService) { AllowFileListing = false };
 
                 var routerModule = new RouterModule();
 
