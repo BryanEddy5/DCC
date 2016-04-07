@@ -1,4 +1,4 @@
-﻿#region Licence
+#region Licence
 
 // Distributed under MIT License
 // ===========================================================
@@ -87,38 +87,47 @@ namespace CameraControl.windows
                 param = ServiceProvider.DeviceManager.SelectedCameraDevice;
             lock (_locker)
             {
+                Log.Debug("Entering LiveViewManager.ExecuteCommand _locker for cmd: " + cmd);
                 switch (cmd)
                 {
                     case WindowsCmdConsts.LiveViewWnd_Show:
                         {
-                            if (!_register.ContainsKey(param))
+                            ICameraDevice selectedCameraDevice = param as ICameraDevice;
+                            if (selectedCameraDevice == null || !selectedCameraDevice.IsConnected)
                             {
-                                Application.Current.Dispatcher.Invoke(new Action(delegate
-                                {
-                                    LiveViewWnd wnd = new LiveViewWnd();
-                                    ServiceProvider.Settings.ApplyTheme(wnd);
-                                    _register.Add(param, wnd);
-                                    wnd.Owner = ServiceProvider.PluginManager.SelectedWindow as Window;
-                                }));
+                                Log.Error("Attempting to use LiveViewWnd_Show with no camera detected");
                             }
-                            NikonBase nikonBase = param as NikonBase;
-                            if (nikonBase != null && ServiceProvider.Settings.EasyLiveViewControl)
+                            else
                             {
-                                CameraPreset preset = new CameraPreset();
-                                preset.Get(nikonBase);
-                                if (!_presets.ContainsKey(nikonBase))
-                                    _presets.Add(nikonBase, preset);
-                                else
-                                    _presets[nikonBase] = preset;
-                                if (nikonBase.ShutterSpeed.Value == "Bulb")
+                                if (!_register.ContainsKey(param))
                                 {
-                                    nikonBase.ShutterSpeed.Value =
-                                        nikonBase.ShutterSpeed.Values[nikonBase.ShutterSpeed.Values.Count / 2];
+                                    Application.Current.Dispatcher.Invoke(new Action(delegate
+                                    {
+                                        LiveViewWnd wnd = new LiveViewWnd();
+                                        ServiceProvider.Settings.ApplyTheme(wnd);
+                                        _register.Add(param, wnd);
+                                        wnd.Owner = ServiceProvider.PluginManager.SelectedWindow as Window;
+                                    }));
                                 }
-                                nikonBase.FocusMode.Value = nikonBase.FocusMode.Values[0];
-                                nikonBase.FNumber.Value = nikonBase.FNumber.Values[0];
+                                NikonBase nikonBase = param as NikonBase;
+                                if (nikonBase != null && ServiceProvider.Settings.EasyLiveViewControl)
+                                {
+                                    CameraPreset preset = new CameraPreset();
+                                    preset.Get(nikonBase);
+                                    if (!_presets.ContainsKey(nikonBase))
+                                        _presets.Add(nikonBase, preset);
+                                    else
+                                        _presets[nikonBase] = preset;
+                                    if (nikonBase.ShutterSpeed.Value == "Bulb")
+                                    {
+                                        nikonBase.ShutterSpeed.Value =
+                                            nikonBase.ShutterSpeed.Values[nikonBase.ShutterSpeed.Values.Count / 2];
+                                    }
+                                    nikonBase.FocusMode.Value = nikonBase.FocusMode.Values[0];
+                                    nikonBase.FNumber.Value = nikonBase.FNumber.Values[0];
+                                }
+                                _register[param].ExecuteCommand(cmd, param);
                             }
-                            _register[param].ExecuteCommand(cmd, param);
                         }
                         break;
                     case WindowsCmdConsts.LiveViewWnd_Hide:
@@ -154,6 +163,7 @@ namespace CameraControl.windows
                         }
                         break;
                 }
+                Log.Debug("Leaving LiveViewManager.ExecuteCommand _locker for cmd: " + cmd);
             }
         }
 

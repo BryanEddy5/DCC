@@ -1072,10 +1072,11 @@ namespace CameraControl.Devices.Canon
                 Camera.ResumeLiveview();
                 ErrorCodes.GetException(comException);
             }
-            catch
+            catch (Exception ex)
             {
                 Camera.ResumeLiveview();
                 IsBusy = false;
+                Log.Debug("EOS capture exception: ", ex);
                 throw;
             }
             finally

@@ -177,35 +177,54 @@ namespace CameraControl.Core.Classes
                     // someCallBackString({ The Object });
                     var jsoncallback = queryString["jsoncallback"];
 
-                    Log.Debug("jsonp.api operation is " + operation);
+                    Log.Debug("jsonp.api operation is " + operation + " - started");
                     if ("capture".Equals(operation))
                     {
-                        // Mark any previous images for deletion
-                        foreach (FileItem item in ServiceProvider.Settings.DefaultSession.Files)
+                        string response = "undefined";
+                        ICameraDevice selectedCameraDevice = ServiceProvider.DeviceManager.SelectedCameraDevice;
+                        if (selectedCameraDevice == null || !selectedCameraDevice.IsConnected)
                         {
-                            item.IsChecked = true;
+                            response = "Camera Disconnected";
                         }
+                        else {
+                            // Mark any previous images for deletion
+                            foreach (FileItem item in ServiceProvider.Settings.DefaultSession.Files)
+                            {
+                                item.IsChecked = true;
+                            }
 
-                        string camera = queryString["camera"];
-                        string param1 = queryString["param1"] ?? "";
-                        string param2 = queryString["param2"] ?? "";
-                        string[] args = new[] { operation, param1, param2 };
-                        string response = TakePicture(camera, args);
-                        Log.Debug("TakePicture respose is :" + response);
-                        CameraHelper.WaitPhotoProcessed();
+                            string camera = queryString["camera"];
+                            string param1 = queryString["param1"] ?? "";
+                            string param2 = queryString["param2"] ?? "";
+                            string[] args = new[] { operation, param1, param2 };
+                            response = TakePicture(camera, args);
+                        }
+                        Log.Debug("TakePicture respose is: " + response);
+                        if (response != "OK")
+                        {
+                            Log.Debug("Sending error response: " + response);
+                            // context.Response.StatusCode = 417;
+                            response = JsonConvert.ToString(response);
+                            var s = jsoncallback + "({\"response\":" + response + "});";
+                            SendData(context, Encoding.ASCII.GetBytes(s));
+                        }
+                        else
+                        {
+                            CameraHelper.WaitPhotoProcessed();
 
-                        // Remove any previous image
-                        ServiceProvider.WindowsManager.ExecuteCommand(WindowsCmdConsts.Del_Image, true);
-                        Log.Debug("Called ExecuteCommand with WindowsCmdConsts.Del_Image");
+                            // Remove any previous image
+                            ServiceProvider.WindowsManager.ExecuteCommand(WindowsCmdConsts.Del_Image, true);
+                            Log.Debug("Called ExecuteCommand with WindowsCmdConsts.Del_Image");
 
-                        var fileName = ServiceProvider.DeviceManager.JustCapturedImage[ServiceProvider.DeviceManager.SelectedCameraDevice];
-                        string id = ServiceProvider.DeviceManager.JustCapturedImageId[ServiceProvider.DeviceManager.SelectedCameraDevice]; ;
+                            var fileName = ServiceProvider.DeviceManager.JustCapturedImage[ServiceProvider.DeviceManager.SelectedCameraDevice];
+                            string id = ServiceProvider.DeviceManager.JustCapturedImageId[ServiceProvider.DeviceManager.SelectedCameraDevice]; ;
 
-                        response = JsonConvert.ToString(response);
-                        fileName = JsonConvert.ToString(fileName);
-                        id = JsonConvert.ToString(id);
-                        var s = jsoncallback + "({\"response\":" + response + ", \"filename\":" + fileName + ", \"id\":" + id + "});";
-                        SendData(context, Encoding.ASCII.GetBytes(s));
+                            response = JsonConvert.ToString(response);
+                            fileName = JsonConvert.ToString(fileName);
+                            id = JsonConvert.ToString(id);
+                            var s = jsoncallback + "({\"response\":" + response + ", \"filename\":" + fileName + ", \"id\":" + id + "});";
+                            SendData(context, Encoding.ASCII.GetBytes(s));
+                        }
                     }
                     else if ("upload".Equals(operation))
                     {
@@ -231,7 +250,7 @@ namespace CameraControl.Core.Classes
                     {
                         Log.Error("Unknown JSONP operation: " + operation);
                     }
-
+                    Log.Debug("jsonp.api operation is " + operation + " - complete");
                     // return ModuleResult.Continue;
                 }
 
