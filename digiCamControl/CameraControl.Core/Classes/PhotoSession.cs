@@ -557,6 +557,12 @@ namespace CameraControl.Core.Classes
         {
             lock (_locker)
             {
+                // web requests may not specify a template - cth
+                if (string.IsNullOrEmpty(FileNameTemplate))
+                {
+                    FileNameTemplate = "[Counter 4 digit]";
+                }
+
                 var ext = Path.GetExtension(file);
 
                 if (string.IsNullOrEmpty(ext))
@@ -579,7 +585,7 @@ namespace CameraControl.Core.Classes
                     // the template should contain a counter type tag
                     if (!FileNameTemplate.Contains("[Counter") && !AllowOverWrite)
                         FileNameTemplate += "[Counter 4 digit]";
-                    return GetNextFileName(file, device);
+                    fileName = GetNextFileName(file, device);
                 }
                 _lastFilename = fileName;
                 return fileName;

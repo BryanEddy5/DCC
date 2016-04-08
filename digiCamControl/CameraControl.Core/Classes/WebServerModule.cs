@@ -274,7 +274,10 @@ namespace CameraControl.Core.Classes
                     else
                     {
                         Log.Debug("Could not get liveview.jpg");
-                        Log.Debug("ServiceProvider.DeviceManager.SelectedCameraDevice is " + ServiceProvider.DeviceManager.SelectedCameraDevice);
+                        ICameraDevice selectedCameraDevice = ServiceProvider.DeviceManager.SelectedCameraDevice;
+                        Log.Debug("ServiceProvider.DeviceManager.SelectedCameraDevice is " + selectedCameraDevice);
+                        string noCameraImage = Path.Combine(Settings.WebServerFolder, "img\\NoCameraDetected.png");
+                        SendFile(context, noCameraImage);
                     }
                 }
 
