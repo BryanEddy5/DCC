@@ -1,4 +1,4 @@
-﻿#region Licence
+#region Licence
 
 // Distributed under MIT License
 // ===========================================================
@@ -185,6 +185,7 @@ namespace CameraControl.Core.Classes
             GetMetadata(fileItem);
             try
             {
+                var watch = System.Diagnostics.Stopwatch.StartNew();
                 using (MagickImage image = new MagickImage(filename))
                 {
                     fileItem.FileInfo.SetSize(image.Width, image.Height);                       
@@ -206,6 +207,9 @@ namespace CameraControl.Core.Classes
                     
                     fileItem.Thumbnail = LoadImage(fileItem.SmallThumb);
                 }
+                watch.Stop();
+                Log.Debug("ms for BitmapLoader.GetMetaData " + watch.ElapsedMilliseconds);
+
                 fileItem.SaveInfo();
                 SetImageInfo(fileItem);
                 if (deleteFile)

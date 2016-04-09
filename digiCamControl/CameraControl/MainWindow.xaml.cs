@@ -664,7 +664,11 @@ namespace CameraControl
             // if (item.AutoRotation > 0)
             try
             {
+                var watch = System.Diagnostics.Stopwatch.StartNew();
                 MagickImage image = new MagickImage(source);
+                watch.Stop();
+                Log.Debug("ms for new MagickImage(source) " + watch.ElapsedMilliseconds);
+
                 // image.Rotate(270);
                 image.AutoOrient();
                 image.Format = MagickFormat.Jpeg;

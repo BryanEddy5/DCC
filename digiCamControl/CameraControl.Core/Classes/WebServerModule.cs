@@ -207,6 +207,10 @@ namespace CameraControl.Core.Classes
                             response = JsonConvert.ToString(response);
                             var s = jsoncallback + "({\"response\":" + response + "});";
                             SendData(context, Encoding.ASCII.GetBytes(s));
+
+                            Log.Debug("Reseting LiveView due to error: " + response);
+                            StopLiveViewIfNeeded();
+                            StartLiveViewIfNeeded();
                         }
                         else
                         {
@@ -475,7 +479,18 @@ namespace CameraControl.Core.Classes
                 ServiceProvider.WindowsManager.ExecuteCommand(CmdConsts.LiveView_NoProcess);
                 _liveViewFirstRun = false;
             }
-
         }
+
+        [MethodImpl(MethodImplOptions.Synchronized)]
+        private void StopLiveViewIfNeeded()
+        {
+            if (!_liveViewFirstRun)
+            {
+                ServiceProvider.WindowsManager.ExecuteCommand(WindowsCmdConsts.LiveViewWnd_Hide);
+                Thread.Sleep(500);
+                _liveViewFirstRun = true;
+            }
+        }
+
     }
 }
