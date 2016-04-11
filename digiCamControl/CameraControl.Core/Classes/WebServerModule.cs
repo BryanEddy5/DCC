@@ -476,7 +476,7 @@ namespace CameraControl.Core.Classes
                 ServiceProvider.WindowsManager.ExecuteCommand(WindowsCmdConsts.LiveViewWnd_Show);
                 Thread.Sleep(500);
                 ServiceProvider.WindowsManager.ExecuteCommand(CmdConsts.All_Minimize);
-                ServiceProvider.WindowsManager.ExecuteCommand(CmdConsts.LiveView_NoProcess);
+                // ServiceProvider.WindowsManager.ExecuteCommand(CmdConsts.LiveView_NoProcess); // turns off focus - cth
                 _liveViewFirstRun = false;
             }
         }

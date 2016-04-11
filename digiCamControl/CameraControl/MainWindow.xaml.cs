@@ -499,6 +499,9 @@ namespace CameraControl
                 watch.Stop();
                 Log.Debug("ms for CopyRotateThumbImage " + watch.ElapsedMilliseconds);
 
+                //string rawFile = fileName.Replace(".jpg", "_raw.jpg");
+                //File.Copy(tempFile, rawFile);
+
                 ServiceProvider.DeviceManager.JustCapturedImageId[ServiceProvider.DeviceManager.SelectedCameraDevice] = Guid.NewGuid().ToString("N");
                 ServiceProvider.DeviceManager.JustCapturedImage[ServiceProvider.DeviceManager.SelectedCameraDevice] = fileName;
                 ServiceProvider.DeviceManager.JustCapturedImagePreview[ServiceProvider.DeviceManager.SelectedCameraDevice] = quickThumb;
@@ -660,26 +663,59 @@ namespace CameraControl
             // Avoid reading the file multiple times
             // Read it once to start the process and output copy, rotated, thumb
 
-            string quickThumb = rotated.Replace(".jpg", "_preview.jpg");
+            string rotatedFilename = Path.GetFileName(rotated);
+            string quickThumbFilename = rotatedFilename.Replace(".jpg", "_preview.jpg");
+            var sessionFolder = Path.GetDirectoryName(rotated);
+            string quickThumb = Path.Combine(sessionFolder, "Previews", quickThumbFilename);
+            PhotoUtils.CreateFolder(quickThumb);
+
+            // string quickThumb = rotated.Replace(".jpg", "_preview.jpg");
             // if (item.AutoRotation > 0)
             try
             {
+                var watch0 = System.Diagnostics.Stopwatch.StartNew();
+
                 var watch = System.Diagnostics.Stopwatch.StartNew();
                 MagickImage image = new MagickImage(source);
                 watch.Stop();
                 Log.Debug("ms for new MagickImage(source) " + watch.ElapsedMilliseconds);
 
-                // image.Rotate(270);
-                image.AutoOrient();
-                image.Format = MagickFormat.Jpeg;
-                // Save the result
-                image.Write(rotated);
+                watch = System.Diagnostics.Stopwatch.StartNew();
+                MagickImage imageThumb = image.Clone();
+                watch.Stop();
+                Log.Debug("ms for clone " + watch.ElapsedMilliseconds);
 
-                double dw = (double)BitmapLoader.SmallThumbSize / image.Width;
-                image.Thumbnail((int)(image.Width * dw), (int)(image.Height * dw));
-                image.Unsharpmask(1, 1, 0.5, 0.1);
-                // PhotoUtils.CreateFolder(fileItem.SmallThumb);
-                image.Write(quickThumb);
+                watch = System.Diagnostics.Stopwatch.StartNew();
+                double dw = (double)BitmapLoader.SmallThumbSize / imageThumb.Width;
+                imageThumb.Thumbnail((int)(imageThumb.Width * dw), (int)(imageThumb.Height * dw));
+                imageThumb.Unsharpmask(1, 1, 0.5, 0.1);
+                watch.Stop();
+                Log.Debug("ms for Thumbnail " + watch.ElapsedMilliseconds);
+
+                watch = System.Diagnostics.Stopwatch.StartNew();
+                imageThumb.AutoOrient();
+                watch.Stop();
+                Log.Debug("ms for AutoOrient " + watch.ElapsedMilliseconds);
+
+                watch = System.Diagnostics.Stopwatch.StartNew();
+                int qualityPreview = imageThumb.Quality;
+                imageThumb.Write(quickThumb);
+                watch.Stop();
+                Log.Debug("ms for write " + watch.ElapsedMilliseconds);
+
+                watch0.Stop();
+                Log.Debug("ms for new preview generation " + watch0.ElapsedMilliseconds);
+
+                // image.Rotate(270);
+                //ExifProfile profile = image.GetExifProfile();
+                image.AutoOrient();
+                //profile.SetValue(ExifTag.Orientation, (UInt16)0);
+                image.Format = MagickFormat.Jpeg;
+                int quality = image.Quality;
+                // image.Quality = 100; // increases the size - cth
+                // Save the result
+
+                image.Write(rotated);
             }
             catch (Exception exception)
             {
