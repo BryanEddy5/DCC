@@ -40,6 +40,8 @@ using Griffin.WebServer.Files;
 using Griffin.WebServer.Modules;
 using Griffin.WebServer.Routing;
 using System.Security.Cryptography.X509Certificates;
+using Newtonsoft.Json;
+using CameraControl.Core.Response;
 
 #endregion
 
@@ -73,6 +75,8 @@ namespace CameraControl.Core.Classes
                 var certificate =  // new X509Certificate2("GriffinNetworkingTemp.pfx", "somepassword");
                                     new X509Certificate2(baseDirectory +
                                                     "\\Net\\cert\\GriffinNetworkingTemp.pfx", "mamma");
+                // Make sure things are loaded for serialization
+                JsonConvert.SerializeObject(new CaptureResponse("OK"));
 
                 // And start the server.
                 var server = new HttpServer(moduleManager);

@@ -35,6 +35,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using CameraControl.Core.Scripting;
+using CameraControl.Core.Response;
 using CameraControl.Devices;
 using Griffin.WebServer;
 using Griffin.WebServer.Files;
@@ -204,8 +205,10 @@ namespace CameraControl.Core.Classes
                         {
                             Log.Debug("Sending error response: " + response);
                             // context.Response.StatusCode = 417;
-                            response = JsonConvert.ToString(response);
-                            var s = jsoncallback + "({\"response\":" + response + "});";
+
+                            CaptureResponse captureResponse = new CaptureResponse(response);
+                            var s = ResponseUtils.jsonpResponse(jsoncallback, JsonConvert.SerializeObject(captureResponse));
+
                             SendData(context, Encoding.ASCII.GetBytes(s));
 
                             Log.Debug("Reseting LiveView due to error: " + response);
@@ -221,12 +224,11 @@ namespace CameraControl.Core.Classes
                             Log.Debug("Called ExecuteCommand with WindowsCmdConsts.Del_Image");
 
                             var fileName = ServiceProvider.DeviceManager.JustCapturedImage[ServiceProvider.DeviceManager.SelectedCameraDevice];
-                            string id = ServiceProvider.DeviceManager.JustCapturedImageId[ServiceProvider.DeviceManager.SelectedCameraDevice]; ;
+                            string id = ServiceProvider.DeviceManager.JustCapturedImageId[ServiceProvider.DeviceManager.SelectedCameraDevice];
 
-                            response = JsonConvert.ToString(response);
-                            fileName = JsonConvert.ToString(fileName);
-                            id = JsonConvert.ToString(id);
-                            var s = jsoncallback + "({\"response\":" + response + ", \"filename\":" + fileName + ", \"id\":" + id + "});";
+                            CaptureResponse captureResponse = new CaptureResponse(response, fileName, id);
+                            var s = ResponseUtils.jsonpResponse(jsoncallback, JsonConvert.SerializeObject(captureResponse));
+
                             SendData(context, Encoding.ASCII.GetBytes(s));
                         }
                     }
@@ -242,12 +244,9 @@ namespace CameraControl.Core.Classes
                         string imageDataBase64 = Convert.ToBase64String(imageBytes);
                         int length = imageDataBase64.Length;
 
-                        fileName = JsonConvert.ToString(fileName);
-                        id = JsonConvert.ToString(id);
-                        dateString = JsonConvert.ToString(dateString);
-                        imageDataBase64 = JsonConvert.ToString(imageDataBase64);
-                        var s = jsoncallback + "({\"filename\":" + fileName + ", \"length\":" + length + ", \"id\":" + id
-                            + ", \"dateString\":" + dateString + ", \"imageDataBase64\":" + imageDataBase64 + "});";
+                        UploadResponse uploadResponse = new UploadResponse("OK", fileName, id, length, dateString, imageDataBase64);
+                        var s = ResponseUtils.jsonpResponse(jsoncallback, JsonConvert.SerializeObject(uploadResponse));
+
                         SendData(context, Encoding.ASCII.GetBytes(s));
                     }
                     else
