@@ -1,4 +1,6 @@
-﻿using System;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -24,6 +26,7 @@ namespace CameraControl.Core.Response
         public string shortMessage { get; set; } // Show in the UI
         public string detailMessage { get; set; } // Show in a tool tip - what do do
         public string messageCode { get; set; } // e.g., 8D01
+        [JsonConverter(typeof(StringEnumConverter))]
         public MessageType messageType { get; set; } // ERROR, WARN, SUCCESS
     }
 }
