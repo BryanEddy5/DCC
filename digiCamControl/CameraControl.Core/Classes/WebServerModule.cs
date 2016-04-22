@@ -82,6 +82,14 @@ namespace CameraControl.Core.Classes
         {
             try
             {
+                // Avoid remove control/monitoring of the camera for security purposes
+                if (!"localhost".Equals(context.Request.Uri.Host))
+                {
+                    context.Response.StatusCode = 403;
+                    context.Response.ReasonPhrase = "Forbidden";
+                    return ModuleResult.Continue;
+                }
+
                 if (string.IsNullOrEmpty(context.Request.Uri.AbsolutePath) || context.Request.Uri.AbsolutePath == "/")
                 {
                     string str = context.Request.Uri.Scheme + "://" + context.Request.Uri.Host;
