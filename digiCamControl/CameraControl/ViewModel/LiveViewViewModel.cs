@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Drawing;
 using System.IO;
 using System.Linq;
@@ -1882,11 +1882,18 @@ namespace CameraControl.ViewModel
                     writeableBitmap.PixelWidth - (2*CropOffsetX),
                     writeableBitmap.PixelHeight - (2*CropOffsetY));
             }
+
+            WriteableBitmap liveViewBitmap = writeableBitmap;
+            if (Rotation > 0)
+            {
+                liveViewBitmap = liveViewBitmap.Rotate(Rotation);
+            }
+
             writeableBitmap.Freeze();
             Bitmap = writeableBitmap;
 
             //if (_totalframes%DesiredWebFrameRate == 0)
-            ServiceProvider.DeviceManager.LiveViewImage[CameraDevice] = SaveJpeg(writeableBitmap);
+            ServiceProvider.DeviceManager.LiveViewImage[CameraDevice] = SaveJpeg(liveViewBitmap);
         }
 
         public byte[] SaveJpeg(WriteableBitmap image)

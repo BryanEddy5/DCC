@@ -1009,7 +1009,7 @@ namespace CameraControl.Core.Classes
             MediumFocusStepCanon = 25;
             LargeFocusStepCanon = 100;
             CanonFocusStepWait = 400;
-            RotateIndex = 0;
+            RotateIndex = 3; // was 0, but we want landscape previews - CTH
             FullScreenColor = Colors.Black;
             ShowFullscreenControls = true;
             SelectedLanguage = Thread.CurrentThread.CurrentCulture.Name;

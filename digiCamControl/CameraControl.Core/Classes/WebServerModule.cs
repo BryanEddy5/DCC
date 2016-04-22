@@ -236,7 +236,8 @@ namespace CameraControl.Core.Classes
                     {
                         var fileName = ServiceProvider.DeviceManager.JustCapturedImage[ServiceProvider.DeviceManager.SelectedCameraDevice];
                         string id = ServiceProvider.DeviceManager.JustCapturedImageId[ServiceProvider.DeviceManager.SelectedCameraDevice];
-                        string dateString = "2016-02-15-08-32-55";
+                        // Get an ISO 8601 formatted date string
+                        string dateString = DateTime.UtcNow.ToString("o", System.Globalization.CultureInfo.InvariantCulture);
 
                         byte[] imageBytes = File.ReadAllBytes(fileName);
                         // var s = JsonConvert.SerializeObject(ServiceProvider.Settings.DefaultSession, Formatting.Indented);
