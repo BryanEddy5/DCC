@@ -212,8 +212,8 @@ namespace CameraControl.Core.Classes
                             SendData(context, Encoding.ASCII.GetBytes(s));
 
                             Log.Debug("Reseting LiveView due to error: " + response);
-                            StopLiveViewIfNeeded();
-                            StartLiveViewIfNeeded();
+                            StopLiveViewIfNeeded(true);
+                            StartLiveViewIfNeeded(true);
                         }
                         else
                         {
@@ -250,6 +250,22 @@ namespace CameraControl.Core.Classes
 
                         SendData(context, Encoding.ASCII.GetBytes(s));
                     }
+                    else if ("liveview".Equals(operation))
+                    {
+                        var command = queryString["command"];
+                        if ("show".Equals(command))
+                        {
+                            StartLiveViewIfNeeded(true);
+                        }
+                        else if ("hide".Equals(command))
+                        {
+                            StopLiveViewIfNeeded(true);
+                        }
+                        else
+                        {
+                            Log.Error("JSONP operation: " + operation + ", with unknown option: " + command);
+                        }
+                    }
                     else
                     {
                         Log.Error("Unknown JSONP operation: " + operation);
@@ -266,7 +282,7 @@ namespace CameraControl.Core.Classes
 
                 if (context.Request.Uri.AbsolutePath.StartsWith("/liveview.jpg"))
                 {
-                    StartLiveViewIfNeeded();
+                    StartLiveViewIfNeeded(false);
                     if (
                         ServiceProvider.DeviceManager.SelectedCameraDevice != null &&
                         ServiceProvider.DeviceManager.LiveViewImage.ContainsKey(
@@ -288,7 +304,7 @@ namespace CameraControl.Core.Classes
                 if (context.Request.Uri.AbsolutePath.StartsWith("/liveviewwebcam.jpg") &&
                     ServiceProvider.DeviceManager.SelectedCameraDevice != null )
                 {
-                    StartLiveViewIfNeeded();
+                    StartLiveViewIfNeeded(false);
                     if (ServiceProvider.DeviceManager.LiveViewImage.ContainsKey(
                         ServiceProvider.DeviceManager.SelectedCameraDevice))
                         SendDataFile(context,
@@ -469,12 +485,12 @@ namespace CameraControl.Core.Classes
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
-        private void StartLiveViewIfNeeded()
+        private void StartLiveViewIfNeeded(bool needed)
         {
-            if (_liveViewFirstRun)
+            if (_liveViewFirstRun || needed)
             {
                 ServiceProvider.WindowsManager.ExecuteCommand(WindowsCmdConsts.LiveViewWnd_Show);
-                Thread.Sleep(500);
+                Thread.Sleep(1); // was 500
                 ServiceProvider.WindowsManager.ExecuteCommand(CmdConsts.All_Minimize);
                 // ServiceProvider.WindowsManager.ExecuteCommand(CmdConsts.LiveView_NoProcess); // turns off focus - cth
                 _liveViewFirstRun = false;
@@ -482,9 +498,9 @@ namespace CameraControl.Core.Classes
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
-        private void StopLiveViewIfNeeded()
+        private void StopLiveViewIfNeeded(bool needed)
         {
-            if (!_liveViewFirstRun)
+            if (!_liveViewFirstRun || needed)
             {
                 ServiceProvider.WindowsManager.ExecuteCommand(WindowsCmdConsts.LiveViewWnd_Hide);
                 Thread.Sleep(500);
