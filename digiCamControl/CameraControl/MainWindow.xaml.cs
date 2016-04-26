@@ -494,19 +494,26 @@ namespace CameraControl
 
                 StaticHelper.Instance.SystemMessage = "Photo Captured";
 
+                string quickThumb = QuickThumbFilename(fileName);
                 var watch = System.Diagnostics.Stopwatch.StartNew();
-                string quickThumb = CopyRotateThumbImage(tempFile, fileName);
+                MagickImage image = CopyRotateThumbImage(tempFile, quickThumb);
+
+                CapturedHelper.setPreviewFilename(quickThumb);
+                CapturedHelper.setImageFilename(fileName);
+                CapturedHelper.SignalPreviewReady();
+                StaticHelper.Instance.SystemMessage = "Preview Ready for upload";
+
+                RotateSaveImage(image, fileName);
+
+                ExifProfile profile = image.GetExifProfile();
+                ExifValue exifValue = profile.GetValue(ExifTag.Orientation);
+                OrientationType orientation = (OrientationType) Enum.ToObject(typeof(OrientationType), exifValue.Value);
+                CapturedHelper.setPhotoOrientation(orientation);
+
+                CapturedHelper.SignalPhotoReady();
+
                 watch.Stop();
-                Log.Debug("ms for CopyRotateThumbImage " + watch.ElapsedMilliseconds);
-
-                //string rawFile = fileName.Replace(".jpg", "_raw.jpg");
-                //File.Copy(tempFile, rawFile);
-
-                ServiceProvider.DeviceManager.JustCapturedImageId[ServiceProvider.DeviceManager.SelectedCameraDevice] = Guid.NewGuid().ToString("N");
-                ServiceProvider.DeviceManager.JustCapturedImage[ServiceProvider.DeviceManager.SelectedCameraDevice] = fileName;
-                ServiceProvider.DeviceManager.JustCapturedImagePreview[ServiceProvider.DeviceManager.SelectedCameraDevice] = quickThumb;
-
-                CameraHelper.SignalPhotoProcessed();
+                Log.Debug("ms for CopyRotateThumbImage and RotateSaveImage " + watch.ElapsedMilliseconds);
 
                 StaticHelper.Instance.SystemMessage = "Photo Ready for upload";
 
@@ -658,71 +665,67 @@ namespace CameraControl
             }
         }
 
-        private string CopyRotateThumbImage(string source, string rotated)
+        private string QuickThumbFilename(string rotated)
         {
-            // Avoid reading the file multiple times
-            // Read it once to start the process and output copy, rotated, thumb
-
             string rotatedFilename = Path.GetFileName(rotated);
             string quickThumbFilename = rotatedFilename.Replace(".jpg", "_preview.jpg");
             var sessionFolder = Path.GetDirectoryName(rotated);
             string quickThumb = Path.Combine(sessionFolder, "Previews", quickThumbFilename);
             PhotoUtils.CreateFolder(quickThumb);
 
-            // string quickThumb = rotated.Replace(".jpg", "_preview.jpg");
-            // if (item.AutoRotation > 0)
+            return quickThumbFilename;
+        }
+
+        private MagickImage CopyRotateThumbImage(string source, string quickThumbFilename)
+        {
+            // Avoid reading the file multiple times
+            // Read it once to start the process and output copy, rotated thumb
+
+            MagickImage image = null;
             try
             {
                 var watch0 = System.Diagnostics.Stopwatch.StartNew();
 
-                var watch = System.Diagnostics.Stopwatch.StartNew();
-                MagickImage image = new MagickImage(source);
-                watch.Stop();
-                Log.Debug("ms for new MagickImage(source) " + watch.ElapsedMilliseconds);
-
-                watch = System.Diagnostics.Stopwatch.StartNew();
+                image = new MagickImage(source);
                 MagickImage imageThumb = image.Clone();
-                watch.Stop();
-                Log.Debug("ms for clone " + watch.ElapsedMilliseconds);
 
-                watch = System.Diagnostics.Stopwatch.StartNew();
                 double dw = (double)BitmapLoader.SmallThumbSize / imageThumb.Width;
                 imageThumb.Thumbnail((int)(imageThumb.Width * dw), (int)(imageThumb.Height * dw));
                 imageThumb.Unsharpmask(1, 1, 0.5, 0.1);
-                watch.Stop();
-                Log.Debug("ms for Thumbnail " + watch.ElapsedMilliseconds);
 
-                watch = System.Diagnostics.Stopwatch.StartNew();
                 imageThumb.AutoOrient();
-                watch.Stop();
-                Log.Debug("ms for AutoOrient " + watch.ElapsedMilliseconds);
 
-                watch = System.Diagnostics.Stopwatch.StartNew();
                 int qualityPreview = imageThumb.Quality;
-                imageThumb.Write(quickThumb);
-                watch.Stop();
-                Log.Debug("ms for write " + watch.ElapsedMilliseconds);
+                imageThumb.Write(quickThumbFilename);
 
                 watch0.Stop();
                 Log.Debug("ms for new preview generation " + watch0.ElapsedMilliseconds);
-
-                // image.Rotate(270);
-                //ExifProfile profile = image.GetExifProfile();
-                image.AutoOrient();
-                //profile.SetValue(ExifTag.Orientation, (UInt16)0);
-                image.Format = MagickFormat.Jpeg;
-                int quality = image.Quality;
-                // image.Quality = 100; // increases the size - cth
-                // Save the result
-
-                image.Write(rotated);
             }
             catch (Exception exception)
             {
-                Log.Error("Error in CopyRotateThumbImage: " + rotated, exception);
+                Log.Error("Error in CopyRotateThumbImage: " + quickThumbFilename, exception);
             }
 
-            return quickThumb;
+            return image;
+        }
+
+        private void RotateSaveImage(MagickImage image, string rotated)
+        {
+            var watch = System.Diagnostics.Stopwatch.StartNew();
+
+            // image.Rotate(270);
+            //ExifProfile profile = image.GetExifProfile();
+            image.AutoOrient();
+            //profile.SetValue(ExifTag.Orientation, (UInt16)0);
+            image.Format = MagickFormat.Jpeg;
+            int quality = image.Quality;
+            // image.Quality = 100; // 98% is default, 100% noticeably increases the size - cth
+
+            // Save the result
+            image.Write(rotated);
+
+            watch.Stop();
+            Log.Debug("ms for RotateSaveImage " + watch.ElapsedMilliseconds);
         }
 
         private string CreateQuickThumb(string fileName)

@@ -35,6 +35,7 @@ using System.Text;
 using System.Threading;
 using CameraControl.Devices;
 using CameraControl.Devices.Classes;
+using System.Runtime.CompilerServices;
 
 #endregion
 
@@ -42,17 +43,6 @@ namespace CameraControl.Core.Classes
 {
     public static class CameraHelper
     {
-        private static Semaphore _semaphore = new Semaphore(0, 1);
-
-        public static void WaitPhotoProcessed()
-        {
-            _semaphore.WaitOne();
-        }
-
-        public static void SignalPhotoProcessed()
-        {
-            _semaphore.Release();
-        }
 
         /// <summary>
         /// Captures the specified camera device.

@@ -43,6 +43,7 @@ using Griffin.WebServer.Modules;
 using Newtonsoft.Json;
 using Griffin.Net.Protocols.Http;
 using System.Runtime.CompilerServices;
+using ImageMagick;
 
 #endregion
 
@@ -168,28 +169,30 @@ namespace CameraControl.Core.Classes
                     SendData(context, Encoding.ASCII.GetBytes(s));
                 }
 
-                if (context.Request.Uri.AbsolutePath.StartsWith("/thumb/captured"))
+                if (context.Request.Uri.AbsolutePath.StartsWith("/thumb/captured/"))
                 {
-                    string quickThumb = ServiceProvider.DeviceManager.JustCapturedImagePreview[ServiceProvider.DeviceManager.SelectedCameraDevice];
-                            SendFile(context,
-                                !File.Exists(quickThumb)
-                                    ? Path.Combine(Settings.WebServerFolder, "logo.png")
-                                    : quickThumb);
-                            return ModuleResult.Continue;
+                    string id = getDelimitedId(context.Request.Uri.AbsolutePath, "/", ".");
+                    string quickThumb = CapturedHelper.getPreviewFilename(id);
+                    if (quickThumb == null || !File.Exists(quickThumb))
+                    {
+                        quickThumb = Path.Combine(Settings.WebServerFolder, "img\\PreviewNotFound.png");
+                    }
+                    SendFile(context, quickThumb);
+                    return ModuleResult.Continue;
                 }
 
                 if (context.Request.Uri.AbsolutePath.StartsWith("/jsonp.api"))
                 {
-                    // var operation = context.Request.QueryString["operation"];
                     var operation = queryString["operation"];
 
                     // someCallBackString({ The Object });
                     var jsoncallback = queryString["jsoncallback"];
 
-                    Log.Debug("jsonp.api operation is " + operation + " - started");
+                    Log.Debug("== jsonp.api operation is " + operation + " - started");
                     if ("capture".Equals(operation))
                     {
                         string response = "undefined";
+                        string id = null;
                         ICameraDevice selectedCameraDevice = ServiceProvider.DeviceManager.SelectedCameraDevice;
                         if (selectedCameraDevice == null || !selectedCameraDevice.IsConnected)
                         {
@@ -206,13 +209,15 @@ namespace CameraControl.Core.Classes
                             string param1 = queryString["param1"] ?? "";
                             string param2 = queryString["param2"] ?? "";
                             string[] args = new[] { operation, param1, param2 };
+                            id = CapturedHelper.startCapture();
+                            Log.Debug("-- jsonp.api id is " + id);
                             response = TakePicture(camera, args);
                         }
                         Log.Debug("TakePicture respose is: " + response);
                         if (response != "OK")
                         {
                             Log.Debug("Sending error response: " + response);
-                            // context.Response.StatusCode = 417;
+                            CapturedHelper.cancelCapture(id);
 
                             CaptureResponse captureResponse = new CaptureResponse(response);
                             var s = ResponseUtils.jsonpResponse(jsoncallback, JsonConvert.SerializeObject(captureResponse));
@@ -225,14 +230,13 @@ namespace CameraControl.Core.Classes
                         }
                         else
                         {
-                            CameraHelper.WaitPhotoProcessed();
+                            CapturedHelper.WaitPreviewReady(id);
 
                             // Remove any previous image
                             ServiceProvider.WindowsManager.ExecuteCommand(WindowsCmdConsts.Del_Image, true);
                             Log.Debug("Called ExecuteCommand with WindowsCmdConsts.Del_Image");
 
-                            var fileName = ServiceProvider.DeviceManager.JustCapturedImage[ServiceProvider.DeviceManager.SelectedCameraDevice];
-                            string id = ServiceProvider.DeviceManager.JustCapturedImageId[ServiceProvider.DeviceManager.SelectedCameraDevice];
+                            var fileName = CapturedHelper.getImageFilename(id);
 
                             CaptureResponse captureResponse = new CaptureResponse(response, fileName, id);
                             var s = ResponseUtils.jsonpResponse(jsoncallback, JsonConvert.SerializeObject(captureResponse));
@@ -242,18 +246,23 @@ namespace CameraControl.Core.Classes
                     }
                     else if ("upload".Equals(operation))
                     {
-                        var fileName = ServiceProvider.DeviceManager.JustCapturedImage[ServiceProvider.DeviceManager.SelectedCameraDevice];
-                        string id = ServiceProvider.DeviceManager.JustCapturedImageId[ServiceProvider.DeviceManager.SelectedCameraDevice];
+                        var id = queryString["storageKey"];
+                        Log.Debug("-- jsonp.api id is " + id);
+                        CapturedHelper.WaitPhotoReady(id);
+
+                        var fileName = CapturedHelper.getImageFilename(id);
+
                         // Get an ISO 8601 formatted date string
                         string dateString = DateTime.UtcNow.ToString("o", System.Globalization.CultureInfo.InvariantCulture);
 
+                        OrientationType orientation = CapturedHelper.getPhotoOrientation(id);
                         byte[] imageBytes = File.ReadAllBytes(fileName);
                         // var s = JsonConvert.SerializeObject(ServiceProvider.Settings.DefaultSession, Formatting.Indented);
                         // byte[] imageBytes = ServiceProvider.DeviceManager.LiveViewImage[ServiceProvider.DeviceManager.SelectedCameraDevic];
                         string imageDataBase64 = Convert.ToBase64String(imageBytes);
                         int length = imageDataBase64.Length;
 
-                        UploadResponse uploadResponse = new UploadResponse("OK", fileName, id, length, dateString, imageDataBase64);
+                        UploadResponse uploadResponse = new UploadResponse("OK", fileName, id, length, dateString, orientation, imageDataBase64);
                         var s = ResponseUtils.jsonpResponse(jsoncallback, JsonConvert.SerializeObject(uploadResponse));
 
                         SendData(context, Encoding.ASCII.GetBytes(s));
@@ -278,7 +287,7 @@ namespace CameraControl.Core.Classes
                     {
                         Log.Error("Unknown JSONP operation: " + operation);
                     }
-                    Log.Debug("jsonp.api operation is " + operation + " - complete");
+                    Log.Debug("== jsonp.api operation is " + operation + " - complete");
                     // return ModuleResult.Continue;
                 }
 
@@ -490,6 +499,23 @@ namespace CameraControl.Core.Classes
             return Path.Combine(Settings.WebServerFolder,
                 Uri.UnescapeDataString(uri.AbsolutePath.Remove(0, 1)).TrimStart(new[] {'/'})
                     .Replace('/', '\\'));
+        }
+
+        private string getDelimitedId(string uri, string beginStr, string lastStr)
+        {
+            string id = null;
+
+            if (uri != null)
+            {
+                int beginIdx = uri.LastIndexOf(beginStr) + 1;
+                int endIdx = uri.LastIndexOf(lastStr);
+                if (beginIdx > 0 && endIdx > beginIdx)
+                {
+                    id = uri.Substring(beginIdx, endIdx - beginIdx);
+                }
+            }
+
+            return id;
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]

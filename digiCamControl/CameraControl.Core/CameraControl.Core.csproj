@@ -198,6 +198,7 @@
     <Compile Include="Classes\CameraPreset.cs" />
     <Compile Include="Classes\CameraProperty.cs" />
     <Compile Include="Classes\CameraPropertyEnumerator.cs" />
+    <Compile Include="Classes\CapturedHelper.cs" />
     <Compile Include="Classes\CmdConsts.cs" />
     <Compile Include="Classes\CustomConfigEnumerator.cs" />
     <Compile Include="Classes\Exiv2Helper.cs" />

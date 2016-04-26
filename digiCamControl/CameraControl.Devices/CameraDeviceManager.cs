@@ -65,9 +65,7 @@ namespace CameraControl.Devices
         public Dictionary<ICameraDevice, byte[]> LiveViewImage;
         public Dictionary<ICameraDevice, string> LastCapturedImage;
 
-        public Dictionary<ICameraDevice, string> JustCapturedImage;
-        public Dictionary<ICameraDevice, string> JustCapturedImagePreview;
-        public Dictionary<ICameraDevice, string> JustCapturedImageId;
+        public Dictionary<ICameraDevice, JustCaptured> JustCaptured;
 
         /// <summary>
         /// Gets or sets a value indicating whether use experimental drivers.
@@ -205,9 +203,7 @@ namespace CameraControl.Devices
             _deviceEnumerator = new DeviceDescriptorEnumerator();
             LiveViewImage = new Dictionary<ICameraDevice, byte[]>();
             LastCapturedImage = new Dictionary<ICameraDevice, string>();
-            JustCapturedImage = new Dictionary<ICameraDevice, string>();
-            JustCapturedImagePreview = new Dictionary<ICameraDevice, string>();
-            JustCapturedImageId = new Dictionary<ICameraDevice, string>();
+            JustCaptured = new Dictionary<ICameraDevice, JustCaptured>();
             WifiDeviceProviders = new List<IWifiDeviceProvider>();
 
             // prevent program crash in something wrong with wia

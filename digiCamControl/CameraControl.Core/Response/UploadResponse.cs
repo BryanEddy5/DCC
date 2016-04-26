@@ -1,4 +1,7 @@
-﻿using System;
+using ImageMagick;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -8,13 +11,14 @@ namespace CameraControl.Core.Response
 {
     class UploadResponse
     {
-        public UploadResponse(string response, string filename, string id, int length, string dateString, string imageDataBase64)
+        public UploadResponse(string response, string filename, string id, int length, string dateString, OrientationType orientation, string imageDataBase64)
         {
             this.response = response;
             this.filename = filename;
             this.id = id;
             this.length = length;
             this.dateString = dateString;
+            this.orientation = orientation;
             this.imageDataBase64 = imageDataBase64;
             this.statusMessage = ResponseUtils.createStatusMessage(response);
         }
@@ -25,6 +29,8 @@ namespace CameraControl.Core.Response
         public string id { get; set; }
         public int length { get; set; }
         public string dateString { get; set; }
+        [JsonConverter(typeof(StringEnumConverter))]
+        public OrientationType orientation { get; set; }
         public string imageDataBase64 { get; set; }
     }
 }
