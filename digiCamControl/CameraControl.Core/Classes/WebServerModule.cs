@@ -44,6 +44,7 @@ using Newtonsoft.Json;
 using Griffin.Net.Protocols.Http;
 using System.Runtime.CompilerServices;
 using ImageMagick;
+using CameraControl.Devices.Classes;
 
 #endregion
 
@@ -193,6 +194,10 @@ namespace CameraControl.Core.Classes
                     {
                         string response = "undefined";
                         string id = null;
+                        string subjectAlias = queryString["subjectAlias"];
+                        string subjectEmployeeId = queryString["subjectEmployeeId"];
+                        Log.Debug("Capturing photo for subject with alias " + subjectAlias + " and employee ID " + subjectEmployeeId);
+
                         ICameraDevice selectedCameraDevice = ServiceProvider.DeviceManager.SelectedCameraDevice;
                         if (selectedCameraDevice == null || !selectedCameraDevice.IsConnected)
                         {
@@ -258,14 +263,24 @@ namespace CameraControl.Core.Classes
                         OrientationType orientation = CapturedHelper.getPhotoOrientation(id);
                         byte[] imageBytes = File.ReadAllBytes(fileName);
                         // var s = JsonConvert.SerializeObject(ServiceProvider.Settings.DefaultSession, Formatting.Indented);
-                        // byte[] imageBytes = ServiceProvider.DeviceManager.LiveViewImage[ServiceProvider.DeviceManager.SelectedCameraDevic];
                         string imageDataBase64 = Convert.ToBase64String(imageBytes);
                         int length = imageDataBase64.Length;
 
-                        UploadResponse uploadResponse = new UploadResponse("OK", fileName, id, length, dateString, orientation, imageDataBase64);
+                        ICameraDevice device = ServiceProvider.DeviceManager.SelectedCameraDevice;
+                        CameraProperty property = ServiceProvider.DeviceManager.SelectedCameraDevice.LoadProperties();
+
+                        CameraSettings cameraSettings = new CameraSettings(device);
+                        SoftwareSettings softwareSettings = new SoftwareSettings(property);
+
+                        string cameraName = device.DeviceName;
+                        string cameraSerialNumber = device.SerialNumber;
+
+                        UploadResponse uploadResponse = new UploadResponse("OK", fileName, id, length, dateString, orientation,
+                            cameraName, cameraSerialNumber, cameraSettings, softwareSettings, imageDataBase64);
                         var s = ResponseUtils.jsonpResponse(jsoncallback, JsonConvert.SerializeObject(uploadResponse));
 
-                        SendData(context, Encoding.ASCII.GetBytes(s));
+                        // We need UTF-8 for things like "f/5.6"
+                        SendData(context, Encoding.UTF8.GetBytes(s));
                     }
                     else if ("liveview".Equals(operation))
                     {

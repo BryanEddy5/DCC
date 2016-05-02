@@ -255,12 +255,14 @@
     <Compile Include="Interfaces\IQueueItem.cs" />
     <Compile Include="Interfaces\IToolPlugin.cs" />
     <Compile Include="Interfaces\IWindow.cs" />
+    <Compile Include="Response\CameraSettings.cs" />
     <Compile Include="Response\CaptureResponse.cs" />
     <Compile Include="PluginManager.cs" />
     <Compile Include="Plugin\PluginInfo.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Response\MessageType.cs" />
     <Compile Include="Response\ResponseUtils.cs" />
+    <Compile Include="Response\SoftwareSettings.cs" />
     <Compile Include="Response\StatusMessage.cs" />
     <Compile Include="Response\UploadResponse.cs" />
     <Compile Include="Scripting\CommandLineProcessor.cs" />

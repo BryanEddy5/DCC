@@ -494,7 +494,7 @@ namespace CameraControl
 
                 StaticHelper.Instance.SystemMessage = "Photo Captured";
 
-                string quickThumb = QuickThumbFilename(fileName);
+                string quickThumb = QuickThumbPath(fileName);
                 var watch = System.Diagnostics.Stopwatch.StartNew();
                 MagickImage image = CopyRotateThumbImage(tempFile, quickThumb);
 
@@ -665,7 +665,7 @@ namespace CameraControl
             }
         }
 
-        private string QuickThumbFilename(string rotated)
+        private string QuickThumbPath(string rotated)
         {
             string rotatedFilename = Path.GetFileName(rotated);
             string quickThumbFilename = rotatedFilename.Replace(".jpg", "_preview.jpg");
@@ -673,10 +673,10 @@ namespace CameraControl
             string quickThumb = Path.Combine(sessionFolder, "Previews", quickThumbFilename);
             PhotoUtils.CreateFolder(quickThumb);
 
-            return quickThumbFilename;
+            return quickThumb;
         }
 
-        private MagickImage CopyRotateThumbImage(string source, string quickThumbFilename)
+        private MagickImage CopyRotateThumbImage(string source, string quickThumbPath)
         {
             // Avoid reading the file multiple times
             // Read it once to start the process and output copy, rotated thumb
@@ -696,14 +696,14 @@ namespace CameraControl
                 imageThumb.AutoOrient();
 
                 int qualityPreview = imageThumb.Quality;
-                imageThumb.Write(quickThumbFilename);
+                imageThumb.Write(quickThumbPath);
 
                 watch0.Stop();
                 Log.Debug("ms for new preview generation " + watch0.ElapsedMilliseconds);
             }
             catch (Exception exception)
             {
-                Log.Error("Error in CopyRotateThumbImage: " + quickThumbFilename, exception);
+                Log.Error("Error in CopyRotateThumbImage: " + quickThumbPath, exception);
             }
 
             return image;

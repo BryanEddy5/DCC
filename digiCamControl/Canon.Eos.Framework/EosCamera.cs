@@ -213,8 +213,12 @@ namespace Canon.Eos.Framework
         [EosProperty(Edsdk.PropID_Evf_WhiteBalance)]
         public EosWhiteBalance LiveViewWhiteBalance
         {
-            get { return (EosWhiteBalance)this.GetPropertyIntegerData(Edsdk.PropID_Evf_WhiteBalance); }
-            set { this.SetPropertyIntegerData(Edsdk.PropID_Evf_WhiteBalance, (long)value); }
+            get {
+                return (EosWhiteBalance)this.GetPropertyIntegerData(Edsdk.PropID_Evf_WhiteBalance);
+            }
+            set {
+                this.SetPropertyIntegerData(Edsdk.PropID_Evf_WhiteBalance, (long)value);
+            }
         }
 
         /// <summary>
