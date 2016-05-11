@@ -1197,6 +1197,7 @@ namespace CameraControl.Core.Classes
             {
                 if (File.Exists(filename))
                 {
+                    string defaultPhotoFolder = photoSession.Folder; // want folder from the environment - cth
                     XmlSerializer mySerializer =
                         new XmlSerializer(typeof (PhotoSession));
                     FileStream myFileStream = new FileStream(filename, FileMode.Open);
@@ -1217,6 +1218,12 @@ namespace CameraControl.Core.Classes
                     s = s.Replace("$Tag3", "[Selected Tag3]");
                     s = s.Replace("$Tag4", "[Selected Tag4]");
                     photoSession.FileNameTemplate = s;
+                    // Make sure we get a folder based on the environment rather than a saved session - cth
+                    // Alternatively add [JsonIgnore] [XmlIgnore] to Folder in PhotoSession.cs
+                    if (!photoSession.Folder.Equals(defaultPhotoFolder))
+                    {
+                        photoSession.Folder = defaultPhotoFolder;
+                    }
                 }
             }
             catch (Exception e)
