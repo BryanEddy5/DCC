@@ -193,8 +193,8 @@ namespace CameraControl.Core.Classes
             OnlineReference = true;
             ShowStartupScreen = true;
             ShowStartupScreenAnimation = true;
-            ShowWelcomeScreen = false; // true;
-            CheckForUpdate = true;
+            ShowWelcomeScreen = false; // was true - cth
+            CheckForUpdate = false; // was true - cth
             ShowRefreshButtonMainWindow = true;
             ShowDownloadButtonMainWindow = true;
             ShowBracketingButtonMainWindow = true;
