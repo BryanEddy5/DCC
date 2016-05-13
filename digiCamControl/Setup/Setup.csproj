@@ -58,9 +58,11 @@
   <ItemGroup>
     <Reference Include="BootstrapperCore, Version=3.0.0.0, Culture=neutral, PublicKeyToken=ce35f76fcda82bad, processorArchitecture=MSIL">
       <HintPath>..\packages\WixSharp.bin.1.0.36.0\lib\BootstrapperCore.dll</HintPath>
+      <Private>True</Private>
     </Reference>
     <Reference Include="Microsoft.Deployment.WindowsInstaller, Version=3.0.0.0, Culture=neutral, PublicKeyToken=ce35f76fcda82bad, processorArchitecture=MSIL">
       <HintPath>..\packages\WixSharp.bin.1.0.36.0\lib\Microsoft.Deployment.WindowsInstaller.dll</HintPath>
+      <Private>True</Private>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -72,15 +74,16 @@
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
     <Reference Include="WixSharp, Version=1.0.36.0, Culture=neutral, PublicKeyToken=3775edd25acc43c2, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
       <HintPath>..\packages\WixSharp.bin.1.0.36.0\lib\WixSharp.dll</HintPath>
+      <Private>True</Private>
     </Reference>
-    <Reference Include="WixSharp.Msi">
+    <Reference Include="WixSharp.Msi, Version=1.0.35.0, Culture=neutral, PublicKeyToken=3775edd25acc43c2, processorArchitecture=MSIL">
       <HintPath>..\packages\WixSharp.bin.1.0.36.0\lib\WixSharp.Msi.dll</HintPath>
+      <Private>True</Private>
     </Reference>
     <Reference Include="WixSharp.UI, Version=1.0.35.2, Culture=neutral, PublicKeyToken=3775edd25acc43c2, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
       <HintPath>..\packages\WixSharp.bin.1.0.36.0\lib\WixSharp.UI.dll</HintPath>
+      <Private>True</Private>
     </Reference>
   </ItemGroup>
   <ItemGroup>
