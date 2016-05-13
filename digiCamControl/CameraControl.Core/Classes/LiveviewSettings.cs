@@ -1,4 +1,4 @@
-﻿#region Licence
+#region Licence
 
 // Distributed under MIT License
 // ===========================================================
@@ -219,6 +219,7 @@ namespace CameraControl.Core.Classes
             ShowFocusRect = true;
             ShowLeftTab = true;
             NoProcessing = false;
+            RotationIndex = 3; // portrait default, implies rotation 270 - cth
 
             HorizontalMin = 0;
             HorizontalMax = 100;

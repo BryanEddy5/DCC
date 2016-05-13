@@ -44,6 +44,8 @@ namespace Setup
                 new File(appFeature, "DigiCamControl.xbs"),
                 new Dir(appFeature, "Data",
                     new Files(appFeature, @"Data\*.*")),
+                new Dir(appFeature, "Net",
+                    new Files(appFeature, @"Net\*.*")),
                 //new Dir(appFeature, "Plugins",
                 //    new Files(appFeature, @"Plugins\*.*", "MahApps.Metro.*", "System.Windows.Interactivity.*",
                 //        "WriteableBitmapEx.Wpf.*", "GalaSoft.MvvmLight.*", "*.config")),
