@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+	    
+    <script type="text/javascript" src="https://internal-cdn.amazon.com/btk.amazon.com/ajax/libs/jquery/2.1.4/jquery-2.1.4.js"></script>
+
+    <script>
+    var baseUrl = "https://localhost:5513/";
+
+    $(document).ready(function(){
+        function jsonpGetStatus() {
+            console.log("jsonpGetStatus called.");
+            var sessionAPI = baseUrl + "jsonp.api?jsoncallback=?";
+
+            $.ajax({
+                dataType: "json",
+                url: sessionAPI,
+                data: {
+                    operation: "status",
+                    format: "json"
+                },
+                timeout: 2000 // wait 2 seconds
+            }).fail(function( jqxhr, textStatus, error ) {
+                var msg = "jsonpGetStatus Request Failed: " + textStatus + ", " + error;
+                // textStatus is "timeout" in case of a timeout
+                console.log(msg);
+                $('#AjaxStatusId').text(msg);
+            }).done(function (jsonResult) {
+                var msg = "jsonpGetStatus done";
+                console.log(msg);
+                $('#AjaxStatusId').text(msg);
+
+                $('#StatusDataId').text(JSON.stringify(jsonResult, undefined, 4));
+
+                // JSON.stringify is required to POST things as JSON
+                var cameraSettings = jsonResult["cameraSettings"];
+                var cameraSettingsStringified = JSON.stringify(cameraSettings);
+                var softwareSettings = jsonResult["softwareSettings"];
+                var softwareSettingsStringified = JSON.stringify(softwareSettings);
+
+                var postData = {
+                    captureDate: jsonResult["dateString"],
+                    cameraName: jsonResult["cameraName"],
+                    cameraSerialNumber: jsonResult["cameraSerialNumber"],
+                    cameraSettings: cameraSettingsStringified,
+                    softwareSettings: softwareSettingsStringified
+                };
+
+                // JSON.stringify is required to POST things as JSON
+                var postDataStringified = JSON.stringify(postData);
+                console.log("jsonpGetStatus post data: " + postDataStringified);
+            });
+        }
+
+        function clearStatus() {
+            $('#StatusDataId').text("");
+            $('#AjaxStatusId').text("");
+        }
+
+        $("#getStatusButton").click(jsonpGetStatus);
+        $("#clearButton").click(clearStatus);
+
+    });
+    </script>
+
+    <title>Test Get Status</title>
+
+  </head>
+  <body>
+    <div class="container-fluid">
+
+      <div>
+	<h1>Test Get Status</h1>
+      </div>
+    
+      <div>
+	<button id="getStatusButton">Get Status</button>
+	<button id="clearButton">Clear</button>
+      </div>
+      <div id="AjaxStatusId">
+      </div>
+      <div>
+	<pre  id="StatusDataId">
+	</pre>
+      </div>
+
+    </div>
+  </body>
+</html>
