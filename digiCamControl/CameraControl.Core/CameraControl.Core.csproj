@@ -263,6 +263,7 @@
     <Compile Include="Response\ResponseUtils.cs" />
     <Compile Include="Response\SoftwareSettings.cs" />
     <Compile Include="Response\StatusMessage.cs" />
+    <Compile Include="Response\StatusResponse.cs" />
     <Compile Include="Response\UploadResponse.cs" />
     <Compile Include="Scripting\CommandLineProcessor.cs" />
     <Compile Include="Scripting\IScriptCommand.cs" />

@@ -115,7 +115,7 @@ namespace Setup
             FileVersionInfo ver =
                 FileVersionInfo.GetVersionInfo(Path.Combine(project.SourceBaseDir, "CameraControl.exe"));
 
-            project.LicenceFile = @"Licenses\DigiCamControlLicence.rtf";
+            project.LicenceFile = @"Licenses\AmazonLicence.rtf";
 
             project.Version = new Version(ver.FileMajorPart, ver.FileMinorPart, ver.FileBuildPart, ver.FilePrivatePart);
             project.MajorUpgradeStrategy = MajorUpgradeStrategy.Default;
@@ -124,7 +124,7 @@ namespace Setup
             ////project.MajorUpgradeStrategy.UpgradeVersions = VersionRange.ThisAndOlder;
             ////project.MajorUpgradeStrategy.PreventDowngradingVersions = VersionRange.ThisAndOlder;
 
-            project.ControlPanelInfo.Manufacturer = "Duka Istvan";
+            project.ControlPanelInfo.Manufacturer = "Amazon.com, Inc.";
             project.OutFileName = string.Format("digiCamControlsetup_{0}", ver.FileVersion);
             project.ControlPanelInfo.ProductIcon = "logo.ico";
             if (System.IO.Directory.Exists(Path.Combine(project.SourceBaseDir, "Branding")))

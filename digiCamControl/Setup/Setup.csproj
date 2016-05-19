@@ -93,7 +93,9 @@
     <None Include="packages.config">
       <SubType>Designer</SubType>
     </None>
-    <None Include="wix\$(ProjectName).g.wxs" />
+    <None Include="wix\$(ProjectName).g.wxs">
+      <SubType>Designer</SubType>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

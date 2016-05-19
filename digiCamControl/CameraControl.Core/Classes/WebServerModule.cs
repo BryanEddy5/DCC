@@ -282,6 +282,41 @@ namespace CameraControl.Core.Classes
                         // We need UTF-8 for things like "f/5.6"
                         SendData(context, Encoding.UTF8.GetBytes(s));
                     }
+                    else if ("status".Equals(operation))
+                    {
+                        // Get an ISO 8601 formatted date string
+                        string dateString = DateTime.UtcNow.ToString("o", System.Globalization.CultureInfo.InvariantCulture);
+
+                        var version = typeof(WebServerModule).Assembly.GetName().Version;
+
+                        ICameraDevice device = ServiceProvider.DeviceManager.SelectedCameraDevice;
+                        if (device != null && device.SerialNumber == null)
+                        {
+                            device = null; // no real camera connected
+                        }
+
+                        CameraProperty property = null;
+                        CameraSettings cameraSettings = null;
+                        SoftwareSettings softwareSettings = null;
+                        string cameraName = null;
+                        string cameraSerialNumber = null;
+                        if (device != null)
+                        {
+                            property = ServiceProvider.DeviceManager.SelectedCameraDevice.LoadProperties();
+
+                            cameraSettings = new CameraSettings(device);
+                            softwareSettings = new SoftwareSettings(property);
+
+                            cameraName = device.DeviceName;
+                            cameraSerialNumber = device.SerialNumber;
+                        }
+
+                        StatusResponse statusResponse = new StatusResponse("OK", version.ToString(), dateString,
+                            cameraName, cameraSerialNumber, cameraSettings, softwareSettings);
+                        var s = ResponseUtils.jsonpResponse(jsoncallback, JsonConvert.SerializeObject(statusResponse));
+
+                        SendData(context, Encoding.UTF8.GetBytes(s));
+                    }
                     else if ("liveview".Equals(operation))
                     {
                         var command = queryString["command"];
@@ -295,7 +330,7 @@ namespace CameraControl.Core.Classes
                         }
                         else
                         {
-                            Log.Error("JSONP operation: " + operation + ", with unknown option: " + command);
+                            Log.Error("JSONP operation: " + operation + ", with unknown command: " + command);
                         }
                     }
                     else
