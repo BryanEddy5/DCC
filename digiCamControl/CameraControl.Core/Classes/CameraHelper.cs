@@ -189,5 +189,15 @@ namespace CameraControl.Core.Classes
             //    cameraDevice.CaptureInSdRam = property.CaptureInSdRam;
             return property;
         }
+
+        public static ICameraDevice GetSelectedCameraDevice()
+        {
+            ICameraDevice device = ServiceProvider.DeviceManager.SelectedCameraDevice;
+            if (device != null && !device.IsConnected)
+            {
+                device = null; // no real camera connected
+            }
+            return device;
+        }
     }
 }

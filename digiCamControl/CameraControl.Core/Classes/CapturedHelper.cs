@@ -1,4 +1,4 @@
-﻿using CameraControl.Devices;
+using CameraControl.Devices;
 using ImageMagick;
 using System;
 using System.Collections.Generic;
@@ -14,25 +14,36 @@ namespace CameraControl.Core.Classes
     {
         private static Semaphore _previewSemaphore = new Semaphore(0, 1);
         private static Semaphore _photoSemaphore = new Semaphore(0, 1);
+        private static ICameraDevice _captureDevice = null;
 
         [MethodImpl(MethodImplOptions.Synchronized)]
         public static JustCaptured getJustCaptured() {
-            if (!ServiceProvider.DeviceManager.JustCaptured.ContainsKey(ServiceProvider.DeviceManager.SelectedCameraDevice))
+            JustCaptured justCaptured = null;
+            ICameraDevice device = _captureDevice;
+            if (device != null)
             {
-                ServiceProvider.DeviceManager.JustCaptured[ServiceProvider.DeviceManager.SelectedCameraDevice] = new JustCaptured();
+                if (!ServiceProvider.DeviceManager.JustCaptured.ContainsKey(device))
+                {
+                    ServiceProvider.DeviceManager.JustCaptured[device] = new JustCaptured();
+                }
+                justCaptured = ServiceProvider.DeviceManager.JustCaptured[device];
             }
-            JustCaptured justCaptured = ServiceProvider.DeviceManager.JustCaptured[ServiceProvider.DeviceManager.SelectedCameraDevice];
             return justCaptured;
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
         public static string startCapture()
         {
-            string id = Guid.NewGuid().ToString("N");
-            setId(id);
-            setCaptureState(JustCaptured.CaptureState.GETTING_PREVIEW);
-            _previewSemaphore = new Semaphore(0, 1);
-            _photoSemaphore = new Semaphore(0, 1);
+            string id = null;
+            _captureDevice = CameraHelper.GetSelectedCameraDevice();
+            if (_captureDevice != null)
+            {
+                id = Guid.NewGuid().ToString("N");
+                setId(id);
+                setCaptureState(JustCaptured.CaptureState.GETTING_PREVIEW);
+                _previewSemaphore = new Semaphore(0, 1);
+                _photoSemaphore = new Semaphore(0, 1);
+            }
             return id;
         }
 
@@ -64,20 +75,16 @@ namespace CameraControl.Core.Classes
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
-        public static bool expectedId(string expectedId, string context)
+        public static bool isExpectedId(string id, string context)
         {
-            string actualId = getId();
-            if (expectedId != null && expectedId.Equals(actualId))
+            string expectedId = getId();
+            if (id != null && id.Equals(expectedId))
             {
                 return true;
             }
-            else if (expectedId != null && expectedId == "") {
-                Log.Debug("CapturedHelper " + context + ": expected ID was legacy empty string, but actual ID was " + actualId);
-                return true;
-            }
-            else
+         else
             {
-                Log.Debug("CapturedHelper " + context + ": expected ID " + expectedId + ", but actual ID was " + actualId);
+                Log.Debug("CapturedHelper " + context + ": current expected ID " + expectedId + " differs from ID " + id);
                 return false;
             }
         }
@@ -87,9 +94,10 @@ namespace CameraControl.Core.Classes
         {
             if (id != null)
             {
-                if (expectedId(id, "cancelCapture"))
+                if (isExpectedId(id, "cancelCapture"))
                 {
                     setCaptureState(JustCaptured.CaptureState.CANCELLED);
+                    _captureDevice = null;
                 }
             }
         }
@@ -98,7 +106,7 @@ namespace CameraControl.Core.Classes
         public static string getImageFilename(string id)
         {
             string imageFilename = null;
-            if (expectedId(id, "getImageFilename"))
+            if (isExpectedId(id, "getImageFilename"))
             {
                 imageFilename = getJustCaptured().ImageFilename;
             }
@@ -115,7 +123,7 @@ namespace CameraControl.Core.Classes
         public static string getPreviewFilename(string id)
         {
             string previewFilename = null;
-            if (expectedId(id, "getPreviewFilename"))
+            if (isExpectedId(id, "getPreviewFilename"))
             {
                 previewFilename = getJustCaptured().PreviewFilename;
             }
@@ -127,7 +135,7 @@ namespace CameraControl.Core.Classes
         {
             OrientationType orientationValue = OrientationType.Undefined;
 
-            if (expectedId(id, "getPhotoOrientation"))
+            if (isExpectedId(id, "getPhotoOrientation"))
             {
                 string orientation = getJustCaptured().Orientation;
                 orientationValue = (OrientationType)Enum.Parse(typeof(OrientationType), orientation);
@@ -152,7 +160,7 @@ namespace CameraControl.Core.Classes
         public static void WaitPreviewReady(string id)
         {
             getCaptureState("WaitPreviewReady");
-            if (expectedId(id, "WaitPreviewReady"))
+            if (isExpectedId(id, "WaitPreviewReady"))
             {
                 _previewSemaphore.WaitOne();
             }
@@ -170,7 +178,7 @@ namespace CameraControl.Core.Classes
         public static void WaitPhotoReady(string id)
         {
             getCaptureState("WaitPhotoReady");
-            if (expectedId(id, "WaitPhotoReady"))
+            if (isExpectedId(id, "WaitPhotoReady"))
             {
                 _photoSemaphore.WaitOne();
             }

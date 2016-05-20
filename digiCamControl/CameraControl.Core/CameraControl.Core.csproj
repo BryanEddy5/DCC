@@ -254,6 +254,7 @@
     <Compile Include="Interfaces\IQueueItem.cs" />
     <Compile Include="Interfaces\IToolPlugin.cs" />
     <Compile Include="Interfaces\IWindow.cs" />
+    <Compile Include="Response\CameraInfo.cs" />
     <Compile Include="Response\CameraSettings.cs" />
     <Compile Include="Response\CaptureResponse.cs" />
     <Compile Include="PluginManager.cs" />

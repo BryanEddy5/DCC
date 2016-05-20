@@ -11,16 +11,15 @@ namespace CameraControl.Core.Response
 {
     class StatusResponse
     {
-        public StatusResponse(string response, string version, string dateString,
-            string cameraName, string cameraSerialNumber, CameraSettings cameraSettings, SoftwareSettings softwareSettings)
+        public StatusResponse(string response, string version, string dateString, CameraInfo cameraInfo)
         {
             this.response = response;
             this.version = version;
             this.dateString = dateString;
-            this.cameraName = cameraName;
-            this.cameraSerialNumber = cameraSerialNumber;
-            this.cameraSettings = cameraSettings;
-            this.softwareSettings = softwareSettings;
+            this.cameraName = cameraInfo.cameraName;
+            this.cameraSerialNumber = cameraInfo.cameraSerialNumber;
+            this.cameraSettings = cameraInfo.cameraSettings;
+            this.softwareSettings = cameraInfo.softwareSettings;
             this.statusMessage = ResponseUtils.createStatusMessage(response);
         }
 

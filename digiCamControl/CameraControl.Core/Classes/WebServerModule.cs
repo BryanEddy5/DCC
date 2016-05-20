@@ -198,8 +198,7 @@ namespace CameraControl.Core.Classes
                         string subjectEmployeeId = queryString["subjectEmployeeId"];
                         Log.Debug("Capturing photo for subject with alias " + subjectAlias + " and employee ID " + subjectEmployeeId);
 
-                        ICameraDevice selectedCameraDevice = ServiceProvider.DeviceManager.SelectedCameraDevice;
-                        if (selectedCameraDevice == null || !selectedCameraDevice.IsConnected)
+                        if (CameraHelper.GetSelectedCameraDevice() == null)
                         {
                             response = "Camera Disconnected";
                         }
@@ -210,16 +209,17 @@ namespace CameraControl.Core.Classes
                                 item.IsChecked = true;
                             }
 
+                            id = CapturedHelper.startCapture();
+                            Log.Debug("-- jsonp.api id is " + id);
+
                             string camera = queryString["camera"];
                             string param1 = queryString["param1"] ?? "";
                             string param2 = queryString["param2"] ?? "";
                             string[] args = new[] { operation, param1, param2 };
-                            id = CapturedHelper.startCapture();
-                            Log.Debug("-- jsonp.api id is " + id);
                             response = TakePicture(camera, args);
                         }
                         Log.Debug("TakePicture respose is: " + response);
-                        if (response != "OK")
+                        if (response != "OK" || id == null)
                         {
                             Log.Debug("Sending error response: " + response);
                             CapturedHelper.cancelCapture(id);
@@ -230,8 +230,12 @@ namespace CameraControl.Core.Classes
                             SendData(context, Encoding.ASCII.GetBytes(s));
 
                             Log.Debug("Reseting LiveView due to error: " + response);
-                            StopLiveViewIfNeeded(true);
-                            StartLiveViewIfNeeded(true);
+                            if (CameraHelper.GetSelectedCameraDevice() != null)
+                            {
+                                // This can help fix focus errors
+                                StopLiveViewIfNeeded(true);
+                                StartLiveViewIfNeeded(true);
+                            }
                         }
                         else
                         {
@@ -253,32 +257,33 @@ namespace CameraControl.Core.Classes
                     {
                         var id = queryString["storageKey"];
                         Log.Debug("-- jsonp.api id is " + id);
-                        CapturedHelper.WaitPhotoReady(id);
 
-                        var fileName = CapturedHelper.getImageFilename(id);
+                        UploadResponse uploadResponse = null;
+                        if (!CapturedHelper.isExpectedId(id, "upload operation"))
+                        {
+                            uploadResponse = new UploadResponse("Upload called with invalid storage key");
+                        }
+                        else
+                        {
+                            CapturedHelper.WaitPhotoReady(id);
 
-                        // Get an ISO 8601 formatted date string
-                        string dateString = DateTime.UtcNow.ToString("o", System.Globalization.CultureInfo.InvariantCulture);
+                            var fileName = CapturedHelper.getImageFilename(id);
 
-                        OrientationType orientation = CapturedHelper.getPhotoOrientation(id);
-                        byte[] imageBytes = File.ReadAllBytes(fileName);
-                        // var s = JsonConvert.SerializeObject(ServiceProvider.Settings.DefaultSession, Formatting.Indented);
-                        string imageDataBase64 = Convert.ToBase64String(imageBytes);
-                        int length = imageDataBase64.Length;
+                            // Get an ISO 8601 formatted date string
+                            string dateString = DateTime.UtcNow.ToString("o", System.Globalization.CultureInfo.InvariantCulture);
 
-                        ICameraDevice device = ServiceProvider.DeviceManager.SelectedCameraDevice;
-                        CameraProperty property = ServiceProvider.DeviceManager.SelectedCameraDevice.LoadProperties();
+                            OrientationType orientation = CapturedHelper.getPhotoOrientation(id);
+                            byte[] imageBytes = File.ReadAllBytes(fileName);
+                            // var s = JsonConvert.SerializeObject(ServiceProvider.Settings.DefaultSession, Formatting.Indented);
+                            string imageDataBase64 = Convert.ToBase64String(imageBytes);
+                            int length = imageDataBase64.Length;
 
-                        CameraSettings cameraSettings = new CameraSettings(device);
-                        SoftwareSettings softwareSettings = new SoftwareSettings(property);
+                            CameraInfo cameraInfo = new CameraInfo(CameraHelper.GetSelectedCameraDevice());
 
-                        string cameraName = device.DeviceName;
-                        string cameraSerialNumber = device.SerialNumber;
+                            uploadResponse = new UploadResponse("OK", fileName, id, length, dateString, orientation, cameraInfo, imageDataBase64);
+                        }
 
-                        UploadResponse uploadResponse = new UploadResponse("OK", fileName, id, length, dateString, orientation,
-                            cameraName, cameraSerialNumber, cameraSettings, softwareSettings, imageDataBase64);
                         var s = ResponseUtils.jsonpResponse(jsoncallback, JsonConvert.SerializeObject(uploadResponse));
-
                         // We need UTF-8 for things like "f/5.6"
                         SendData(context, Encoding.UTF8.GetBytes(s));
                     }
@@ -289,30 +294,9 @@ namespace CameraControl.Core.Classes
 
                         var version = typeof(WebServerModule).Assembly.GetName().Version;
 
-                        ICameraDevice device = ServiceProvider.DeviceManager.SelectedCameraDevice;
-                        if (device != null && device.SerialNumber == null)
-                        {
-                            device = null; // no real camera connected
-                        }
+                        CameraInfo cameraInfo = new CameraInfo(CameraHelper.GetSelectedCameraDevice());
 
-                        CameraProperty property = null;
-                        CameraSettings cameraSettings = null;
-                        SoftwareSettings softwareSettings = null;
-                        string cameraName = null;
-                        string cameraSerialNumber = null;
-                        if (device != null)
-                        {
-                            property = ServiceProvider.DeviceManager.SelectedCameraDevice.LoadProperties();
-
-                            cameraSettings = new CameraSettings(device);
-                            softwareSettings = new SoftwareSettings(property);
-
-                            cameraName = device.DeviceName;
-                            cameraSerialNumber = device.SerialNumber;
-                        }
-
-                        StatusResponse statusResponse = new StatusResponse("OK", version.ToString(), dateString,
-                            cameraName, cameraSerialNumber, cameraSettings, softwareSettings);
+                        StatusResponse statusResponse = new StatusResponse("OK", version.ToString(), dateString, cameraInfo);
                         var s = ResponseUtils.jsonpResponse(jsoncallback, JsonConvert.SerializeObject(statusResponse));
 
                         SendData(context, Encoding.UTF8.GetBytes(s));
@@ -350,34 +334,31 @@ namespace CameraControl.Core.Classes
                 if (context.Request.Uri.AbsolutePath.StartsWith("/liveview.jpg"))
                 {
                     StartLiveViewIfNeeded(false);
+                    ICameraDevice device = CameraHelper.GetSelectedCameraDevice();
                     if (
-                        ServiceProvider.DeviceManager.SelectedCameraDevice != null &&
-                        ServiceProvider.DeviceManager.LiveViewImage.ContainsKey(
-                        ServiceProvider.DeviceManager.SelectedCameraDevice))
+                        device != null &&
+                        ServiceProvider.DeviceManager.LiveViewImage.ContainsKey(device))
                     {
                         SendDataFile(context,
-                            ServiceProvider.DeviceManager.LiveViewImage[ServiceProvider.DeviceManager.SelectedCameraDevice], MimeTypeProvider.Instance.Get("liveview.jpg"));
+                            ServiceProvider.DeviceManager.LiveViewImage[device], MimeTypeProvider.Instance.Get("liveview.jpg"));
                     }
                     else
                     {
                         Log.Debug("Could not get liveview.jpg");
-                        ICameraDevice selectedCameraDevice = ServiceProvider.DeviceManager.SelectedCameraDevice;
-                        Log.Debug("ServiceProvider.DeviceManager.SelectedCameraDevice is " + selectedCameraDevice);
+                        Log.Debug("ServiceProvider.DeviceManager.SelectedCameraDevice is " + device);
                         string noCameraImage = Path.Combine(Settings.WebServerFolder, "img\\NoCameraDetected.png");
                         SendFile(context, noCameraImage);
                     }
                 }
 
                 if (context.Request.Uri.AbsolutePath.StartsWith("/liveviewwebcam.jpg") &&
-                    ServiceProvider.DeviceManager.SelectedCameraDevice != null )
+                    CameraHelper.GetSelectedCameraDevice() != null)
                 {
                     StartLiveViewIfNeeded(false);
-                    if (ServiceProvider.DeviceManager.LiveViewImage.ContainsKey(
-                        ServiceProvider.DeviceManager.SelectedCameraDevice))
+                    ICameraDevice device = CameraHelper.GetSelectedCameraDevice();
+                    if (ServiceProvider.DeviceManager.LiveViewImage.ContainsKey(device))
                         SendDataFile(context,
-                            ServiceProvider.DeviceManager.LiveViewImage[
-                                ServiceProvider.DeviceManager.SelectedCameraDevice],
-                            MimeTypeProvider.Instance.Get("liveview.jpg"));
+                            ServiceProvider.DeviceManager.LiveViewImage[device], MimeTypeProvider.Instance.Get("liveviewwebcam.jpg"));
                 }
 
                 if (context.Request.Uri.AbsolutePath.StartsWith("/image/"))

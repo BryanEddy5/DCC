@@ -11,8 +11,14 @@ namespace CameraControl.Core.Response
 {
     class UploadResponse
     {
+        public UploadResponse(string response)
+        {
+            this.response = response;
+            this.statusMessage = ResponseUtils.createStatusMessage(response);
+        }
+
         public UploadResponse(string response, string filename, string id, int length, string dateString, OrientationType orientation,
-            string cameraName, string cameraSerialNumber, CameraSettings cameraSettings, SoftwareSettings softwareSettings, string imageDataBase64)
+            CameraInfo cameraInfo, string imageDataBase64)
         {
             this.response = response;
             this.filename = filename;
@@ -20,10 +26,10 @@ namespace CameraControl.Core.Response
             this.length = length;
             this.dateString = dateString;
             this.orientation = orientation;
-            this.cameraName = cameraName;
-            this.cameraSerialNumber = cameraSerialNumber;
-            this.cameraSettings = cameraSettings;
-            this.softwareSettings = softwareSettings;
+            this.cameraName = cameraInfo.cameraName;
+            this.cameraSerialNumber = cameraInfo.cameraSerialNumber;
+            this.cameraSettings = cameraInfo.cameraSettings;
+            this.softwareSettings = cameraInfo.softwareSettings;
             this.imageDataBase64 = imageDataBase64;
             this.statusMessage = ResponseUtils.createStatusMessage(response);
         }
