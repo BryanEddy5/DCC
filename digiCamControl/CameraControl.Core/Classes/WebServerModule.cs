@@ -280,7 +280,8 @@ namespace CameraControl.Core.Classes
 
                             CameraInfo cameraInfo = new CameraInfo(CameraHelper.GetSelectedCameraDevice());
 
-                            uploadResponse = new UploadResponse("OK", fileName, id, length, dateString, orientation, cameraInfo, imageDataBase64);
+                            var version = typeof(WebServerModule).Assembly.GetName().Version;
+                            uploadResponse = new UploadResponse("OK", version.ToString(), fileName, id, length, dateString, orientation, cameraInfo, imageDataBase64);
                         }
 
                         var s = ResponseUtils.jsonpResponse(jsoncallback, JsonConvert.SerializeObject(uploadResponse));
@@ -292,10 +293,9 @@ namespace CameraControl.Core.Classes
                         // Get an ISO 8601 formatted date string
                         string dateString = DateTime.UtcNow.ToString("o", System.Globalization.CultureInfo.InvariantCulture);
 
-                        var version = typeof(WebServerModule).Assembly.GetName().Version;
-
                         CameraInfo cameraInfo = new CameraInfo(CameraHelper.GetSelectedCameraDevice());
 
+                        var version = typeof(WebServerModule).Assembly.GetName().Version;
                         StatusResponse statusResponse = new StatusResponse("OK", version.ToString(), dateString, cameraInfo);
                         var s = ResponseUtils.jsonpResponse(jsoncallback, JsonConvert.SerializeObject(statusResponse));
 

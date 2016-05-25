@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -32,7 +32,7 @@ namespace CameraControl.Core.Response
                     // Generalize this
                     if (messageCode == "8D01")
                     {
-                        message = new StatusMessage("The camera did not focus", "Please try taking the picture again", messageCode, MessageType.WARN);
+                        message = new StatusMessage("The camera did not focus. Please try again.", "Please try taking the picture again", messageCode, MessageType.WARN);
                     }
                     else
                     {
