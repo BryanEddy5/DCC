@@ -12,8 +12,10 @@ namespace CameraControl.Core.Classes
 {
     public class CapturedHelper
     {
-        private static Semaphore _previewSemaphore = new Semaphore(0, 1);
-        private static Semaphore _photoSemaphore = new Semaphore(0, 1);
+        // Use a maxCount > 1 to allow multiple retrivals of the same preview or photo
+        private static int maxCount = Int32.MaxValue;
+        private static Semaphore _previewSemaphore = new Semaphore(0, maxCount);
+        private static Semaphore _photoSemaphore = new Semaphore(0, maxCount);
         private static ICameraDevice _captureDevice = null;
 
         [MethodImpl(MethodImplOptions.Synchronized)]
@@ -41,8 +43,8 @@ namespace CameraControl.Core.Classes
                 id = Guid.NewGuid().ToString("N");
                 setId(id);
                 setCaptureState(JustCaptured.CaptureState.GETTING_PREVIEW);
-                _previewSemaphore = new Semaphore(0, 1);
-                _photoSemaphore = new Semaphore(0, 1);
+                _previewSemaphore = new Semaphore(0, maxCount);
+                _photoSemaphore = new Semaphore(0, maxCount);
             }
             return id;
         }
@@ -171,7 +173,14 @@ namespace CameraControl.Core.Classes
         {
             JustCaptured.CaptureState captureState = getCaptureState("SignalPreviewReady");
             setCaptureState(JustCaptured.CaptureState.GETTING_PHOTO);
-            _previewSemaphore.Release();
+            try
+            {
+                _previewSemaphore.Release(maxCount);
+            }
+            catch (Exception e)
+            {
+                Log.Debug("Exception in SignalPreviewReady(): " + e.Message);
+            }
         }
 
         // Do not synchronize this method
@@ -189,7 +198,14 @@ namespace CameraControl.Core.Classes
         {
             JustCaptured.CaptureState captureState = getCaptureState("SignalPhotoReady");
             setCaptureState(JustCaptured.CaptureState.COMPLETE);
-            _photoSemaphore.Release();
+            try
+            {
+                _photoSemaphore.Release(maxCount);
+            }
+            catch (Exception e)
+            {
+                Log.Debug("Exception in SignalPhotoReady(): " + e.Message);
+            }
         }
 
     }

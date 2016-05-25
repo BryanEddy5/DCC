@@ -17,7 +17,7 @@ namespace CameraControl.Core.Response
             this.statusMessage = ResponseUtils.createStatusMessage(response);
         }
 
-        public UploadResponse(string response, string filename, string id, int length, string dateString, OrientationType orientation,
+        public UploadResponse(string response, string version, string filename, string id, int length, string dateString, OrientationType orientation,
             CameraInfo cameraInfo, string imageDataBase64)
         {
             this.response = response;
@@ -26,6 +26,7 @@ namespace CameraControl.Core.Response
             this.length = length;
             this.dateString = dateString;
             this.orientation = orientation;
+            this.softwareVersion = version;
             this.cameraName = cameraInfo.cameraName;
             this.cameraSerialNumber = cameraInfo.cameraSerialNumber;
             this.cameraSettings = cameraInfo.cameraSettings;
@@ -40,6 +41,7 @@ namespace CameraControl.Core.Response
         public string id { get; set; }
         public int length { get; set; }
         public string dateString { get; set; }
+        public string softwareVersion { get; set; }
         public string cameraName { get; set; }
         public string cameraSerialNumber { get; set; }
         [JsonConverter(typeof(StringEnumConverter))]

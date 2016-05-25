@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+	    
+    <script type="text/javascript" src="https://internal-cdn.amazon.com/btk.amazon.com/ajax/libs/jquery/2.1.4/jquery-2.1.4.js"></script>
+
+    <script>
+    var baseUrl = "https://localhost:5513/";
+    var subjectAlias = "chemphi";
+    var badgerAlias = subjectAlias;
+    var subjectEmployeeId = "100922687";
+    var photoId = null;
+
+    $(document).ready(function(){
+        function jsonpTakePhoto() {
+            console.log("jsonpTakePhoto called.");
+            var sessionAPI = baseUrl + "jsonp.api?jsoncallback=?";
+
+            console.log("jsonpTakePhoto capture: before");
+            $.getJSON( sessionAPI, {
+                operation: "capture",
+                format: "json",
+                subjectAlias: subjectAlias,
+                subjectEmployeeId: subjectEmployeeId
+            })
+            .done(function(data) {
+                if (data.hasOwnProperty('statusMessage') && data.statusMessage.messageType === 'SUCCESS') {
+                    photoId = data["id"];
+                    console.log("updating newPhotoStorageKey for " + photoId);
+                }
+                else {
+                    console.log("Error during takePhoto: " + data.statusMessage.detailMessage);
+                }
+                console.log("jsonpTakePhoto capture: done");
+            })
+            .error(function(data, textStatus) {
+                console.log("jsonpTakePhoto ERROR: ", data, " status: ", textStatus);
+            });
+            console.log("jsonpTakePhoto call: after");
+        }
+
+        function jsonpUploadPhoto() {
+            console.log("jsonpUploadPhoto called.");
+            var sessionAPI = baseUrl + "jsonp.api?jsoncallback=?";
+
+            var startTime = new Date().getTime();
+            $.getJSON( sessionAPI, {
+                operation: "upload",
+                format: "json",
+                storageKey: photoId
+            }).error(function(jqXHR, textStatus) {
+                // this path can happen with any unexpected error such as invalid JSON
+                console.log("jsonpUploadPhoto upload operation ERROR: ", jqXHR, "status:", textStatus);
+            }).done(function (photojson) {
+                var stopTime = new Date().getTime();
+                var elapsedTime = stopTime - startTime
+                console.log("jsonpUploadPhoto upload operation done in ", elapsedTime, " milliseconds");
+
+                if (!(photojson.hasOwnProperty('statusMessage') && photojson.statusMessage.messageType === 'SUCCESS')) {
+                    console.log("Error during upload operation: " + photojson.statusMessage.detailMessage);
+                }
+                else {
+                    var storageKeyValue = photojson["id"];
+                    var badgerAliasValue = badgerAlias;
+                    var subjectAliasValue = subjectAlias;
+                    var employeeIdValue = subjectEmployeeId;
+
+                    console.log("captured data! by " + badgerAliasValue + " of " + subjectAliasValue + " storageKey "
+                        + storageKeyValue);
+
+                    // JSON.stringify is required to pass things through as JSON
+                    var cameraSettings = photojson["cameraSettings"];
+                    var cameraSettingsStringified = JSON.stringify(cameraSettings);
+                    var softwareSettings = photojson["softwareSettings"];
+                    var softwareSettingsStringified = JSON.stringify(softwareSettings);
+
+                    var postData = {
+                        storageKey: storageKeyValue,
+                        subjectEmployeeId: employeeIdValue,
+                        captureDate: photojson["dateString"],
+                        numBytes: photojson["length"],
+                        orientation: photojson["orientation"],
+                        cameraName: photojson["cameraName"],
+                        cameraSerialNumber: photojson["cameraSerialNumber"],
+                        cameraSettings: cameraSettingsStringified,
+                        softwareSettings: softwareSettingsStringified,
+                        badgerAlias: badgerAliasValue,
+                        subjectAlias: subjectAliasValue,
+                        filename: photojson["filename"],
+                        employeeId: employeeIdValue, // legacy attribute name
+                        imageDataBase64: photojson["imageDataBase64"]
+                    };
+
+                    // JSON.stringify is required to pass things through as JSON
+                    var postDataStringified = JSON.stringify(postData);
+
+                    console.log("jsonpTakePhoto skipping upload to server for now");
+                    return;
+                    $.ajax({
+                        type: "POST",
+                        contentType: "application/json; charset=utf-8",
+                        url: "/api/photo/upload",
+                        data: postDataStringified,
+                        success: function(data, status) {
+                            console.log("SUCCESS: ", data, "status: ", status);
+                            var storageKey = data["storageKey"];
+                            var badgePreviewBase64 = data["imageFileBase64"];
+                        },
+                        error: function(data, status) {
+                            // test this path by setting numBytes to 0 in the postData above
+                            console.log("ERROR: ", data, "status:", status);
+                        },
+                        done: function(e) {
+                            console.log("DONE");
+                        }
+                    });
+                }
+            });
+        }
+
+        function clearStatus() {
+            $('#StatusDataId').text("");
+            $('#AjaxStatusId').text("");
+        }
+
+        $("#takePhotoButton").click(jsonpTakePhoto);
+        $("#uploadPhotoButton").click(jsonpUploadPhoto);
+        $("#clearButton").click(clearStatus);
+
+    });
+    </script>
+
+    <title>Test Capture and Upload</title>
+
+  </head>
+  <body>
+    <div class="container-fluid">
+
+      <div>
+	<h1>Test Capture and Upload</h1>
+      </div>
+    
+      <div>
+	<button id="takePhotoButton">Take Photo</button>
+	<button id="uploadPhotoButton">Upload Photo</button>
+	<button id="clearButton">Clear</button>
+      </div>
+      <div id="AjaxStatusId">
+      </div>
+      <div>
+	<pre  id="StatusDataId">
+	</pre>
+      </div>
+
+    </div>
+  </body>
+</html>
