@@ -42,6 +42,8 @@ using Griffin.WebServer.Routing;
 using System.Security.Cryptography.X509Certificates;
 using Newtonsoft.Json;
 using CameraControl.Core.Response;
+using System.Security.Cryptography;
+using System.Security.AccessControl;
 
 #endregion
 
@@ -72,9 +74,16 @@ namespace CameraControl.Core.Classes
 
                 var baseDirectory = AppDomain.CurrentDomain.BaseDirectory;
                 // from Griffin.Framework\samples\Networking\CustomProtocol\DemoTest\DemoTest\bin\Debug\Net\cert
-                var certificate =  // new X509Certificate2("GriffinNetworkingTemp.pfx", "somepassword");
-                                    new X509Certificate2(baseDirectory +
-                                                    "\\Net\\cert\\GriffinNetworkingTemp.pfx", "mamma");
+                // X509Certificate2 certificate = new X509Certificate2(baseDirectory + "\\Net\\cert\\AmazonWebCatBundle.pfx", "webcat");
+
+                string issuedBy = "CN=AmazonWebCat";
+                X509Store store = getStore();
+                X509Certificate2 certificate = GetCertificateFromStore(store, issuedBy);
+                if (certificate == null)
+                {
+                    Log.Error(String.Format("Could not get certificate issued by {0}", issuedBy));
+                }
+
                 // Make sure things are loaded for serialization
                 JsonConvert.SerializeObject(new CaptureResponse("OK"));
 
@@ -93,5 +102,42 @@ namespace CameraControl.Core.Classes
         public void Stop()
         {
         }
+
+        private static X509Store getStore()
+        {
+            // Get from "Personal"
+            X509Store store = new X509Store(StoreLocation.LocalMachine);
+            // Get from "Trusted Root Certification Authorities"
+            // X509Store store = new X509Store(StoreName.Root);
+            return store;
+        }
+
+        private static X509Certificate2 GetCertificateFromStore(X509Store store, string certName)
+        {
+            X509Certificate2 cert = null;
+            try
+            {
+                store.Open(OpenFlags.ReadOnly);
+
+                // Place all certificates in an X509Certificate2Collection object.
+                X509Certificate2Collection certCollection = store.Certificates;
+
+                // If using a certificate with a trusted root you do not need to FindByTimeValid
+                X509Certificate2Collection currentCerts = certCollection.Find(X509FindType.FindByTimeValid, DateTime.Now, false);
+                X509Certificate2Collection signingCert = currentCerts.Find(X509FindType.FindByIssuerDistinguishedName, certName, false);
+                if (signingCert.Count > 0)
+                {
+                    // Use the first certificate in the collection, has the right name and is current.
+                    cert = signingCert[0];
+                }
+            }
+            finally
+            {
+                store.Close();
+            }
+
+            return cert;
+        }
+
     }
 }

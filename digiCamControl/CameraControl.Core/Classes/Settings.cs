@@ -1038,7 +1038,7 @@ namespace CameraControl.Core.Classes
             if (ServiceProvider.WindowsManager != null)
                 SyncActions(ServiceProvider.WindowsManager.WindowCommands);
             MinimizeToTrayIcon = false;
-            StartMinimized = false;
+            StartMinimized = true; // was false - cth;
             StartupWithWindows = false;
             LoadThumbsDownload = true;
             FullScreenInSecondaryMonitor = false;

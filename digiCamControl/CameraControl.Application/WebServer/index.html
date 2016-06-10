@@ -1,81 +1,103 @@
-<!DOCTYPE HTML>
-<html>
-<head>
-  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-  <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <link rel="stylesheet" href="css/style.css" type="text/css" media="all">
-  <link rel="stylesheet" href="js/jquery-ui-1.11.2.custom/jquery-ui.min.css" type="text/css" media="all">
-  <title>remote digiCamControl</title>
-</head>
-<body>
-  <header>
-    <div class="menu">
-      <table>
-		<tr>
-		  <td id="logoholder"><span id="logo">digiCamControl<span class="remote">remote</span></span></td>
-		  <td><span id="capture">Capture</span></td>
-		  <td><span id="browse">Control</span></td>
-		  <td><span id="slideshow">Slideshow</span></td>
-		  <td><span id="live">Live</span></td>
-		</tr>
-      </table>
-    </div>
-  </header>
-  <div style="clear: both"></div>
-  <div id="contentwrapper">
-	<div id="content">
-	  <div style="padding:20px">Welcome to <i>remote</i> digiCamControl</div>
-	</div>
-  </div>
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <link type="text/css" rel="stylesheet" href="//internal-cdn.amazon.com/oneg.amazon.com/assets/3.2.5/css/application.min.css" />
 
-<script type="text/javascript" src="js/jquery-1.11.2.min.js"></script>
-<script type="text/javascript" src="js/jquery-ui-1.11.2.custom/jquery-ui.min.js"></script>
-<script type="text/javascript" src="js/jquery.cycle.all.js"></script>
-<script type="text/javascript">
-$(document).ready(function(){
-  $.ajaxSetup({ cache: false });
-  $("#capture").click(function(){
-    $.ajax({
-      method: "GET",
-      url: "/?CMD=Capture"
+    <script type="text/javascript" src="https://internal-cdn.amazon.com/btk.amazon.com/ajax/libs/jquery/2.1.4/jquery-2.1.4.js"></script>
+
+    <style>
+      .goodState   {color: green;}
+      .badState    {color: red;}
+    </style>
+
+    <script>
+    var baseUrl = "";
+
+    $(document).ready(function(){
+        function jsonpGetStatus() {
+            clearStatus();
+            var sessionAPI = baseUrl + "jsonp.api?jsoncallback=?";
+
+            $.ajax({
+                dataType: "json",
+                url: sessionAPI,
+                data: {
+                    operation: "status",
+                    format: "json"
+                },
+                timeout: 2000 // wait 2 seconds
+            }).fail(function( jqxhr, textStatus, error ) {
+                var msg = "Request Failed (" + textStatus + ")!"
+                if (textStatus === "timeout") {
+                    msg = msg + " Make sure DCC is running."
+                }
+                $('#AjaxStatusId').text(msg);
+            }).done(function (jsonResult) {
+                var cameraSerialNumber =  jsonResult["cameraSerialNumber"];
+                var msg;
+                if (cameraSerialNumber) {
+                    msg = "Connected and on!"
+                    addRemoveClass("AjaxStatusId", "goodState", "badState");
+                }
+                else {
+                    msg = "Disconnected or off!"
+                }
+                $('#AjaxStatusId').text(msg);
+
+                var postData = {
+                    cameraName: jsonResult["cameraName"],
+                    cameraSerialNumber: cameraSerialNumber,
+                    cameraSettings: jsonResult["cameraSettings"]
+                };
+
+                var postDataStringified = JSON.stringify(postData, undefined, 4);
+                $('#StatusDataId').text(postDataStringified);
+            });
+        }
+
+        function clearStatus() {
+            $('#StatusDataId').text("");
+            $('#AjaxStatusId').text("");
+            addRemoveClass("AjaxStatusId", "badState", "goodState"); // assume the worst
+        }
+
+        function addRemoveClass(elemId, addClass, removeClass) {
+           $('#' + elemId).addClass(addClass).removeClass(removeClass);
+        }
+
+        $("#getStatusButton").click(jsonpGetStatus);
+        $("#clearButton").click(clearStatus);
+
+        jsonpGetStatus(); // initial state
     });
-    return false;
-  });
-  $("#live").click(function(){
-    $("#content").children().remove().addClass("loading");
-    $("#content").load("/liveview.html?CMD=LiveViewWnd_Show", function(){
-      $(this).removeClass("loading");
-    });
-  });
-  $("#browse").click(function(){
-    $("#content").children().remove().addClass("loading");
-    $("#content").load("/browse.html", function(){
-      $(this).removeClass("loading");
-    });
-  });   
-  $("#slideshow").click(function(){
-    $(".showmenu").click();
-    window.open("slide.html");  
-  });
-  $("body").delegate("button","click", function(){
-    var action = $(this).attr("action");
-    if (action !== undefined) {
-      $.ajax({
-		method: "GET",
-		dataType: "html",
-		url: action
-      });
-    }
-    return false;
-  });
-  $(window).trigger('resize');
-});
-$(window).resize(function() {
-  var top = $('header').height();
-  var remaining_height = parseInt($(window).height() - top); 
-  $('#contentwrapper').height(remaining_height);
-});
-</script>
+    </script>
+
+    <title>WebCat Startup</title>
+  </head>
+<body>
+  <div class="container-fluid">
+    <div id="navbar" class="well row">
+      <div class="navbar-header">
+        <a class="navbar-brand" href="https://photoretakes.corp.amazon.com/badge-operations">Badge Printing Operations</a>
+      </div>
+    </div>
+    <h3>
+      Welcome to the WebCat Startup page.  Visit
+      <a href="https://photoretakes.corp.amazon.com/badge-operations">Badge Printing Operations</a>
+      to begin taking photos!
+    </h3>
+    <p></p>
+    <p>
+      Camera Status: <b><span class="goodState" id="AjaxStatusId"></span></b>
+    </p>
+    <div>
+      <pre  id="StatusDataId">
+      </pre>
+    </div>
+    <div>
+      <button class="btn" id="getStatusButton">Update Status</button>
+    </div>
+  </div>
 </body>
 </html>

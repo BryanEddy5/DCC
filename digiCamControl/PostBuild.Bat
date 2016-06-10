@@ -12,6 +12,11 @@ rem copy %1CameraControl.Plugins\Bin\%2\CameraControl.Plugins.* %1CameraControl\
 rem Copy any certificates
 xcopy %1CameraControl\Net\cert\*.pfx %1CameraControl\Bin\%2\Net\cert /Y /E /R /I
 
+rem Copy certificate installer
+if not exist %1CameraControl\Bin\%2\Tools MD %1CameraControl\Bin\%2\Tools
+xcopy %1CertificateInstaller\Bin\%2\CertificateInstaller.exe %1CameraControl\Bin\%2\Tools\ /R /Y
+xcopy %1CertificateInstaller\CertificateInstaller.bat %1CameraControl\Bin\%2\Tools\ /R /Y
+
 REM Moved to MtpTester to avoid build order issues
 REM copy %1MtpTester\Bin\%2\MtpTester.exe %1CameraControl\Bin\%2\ /Y
 REM echo %ERRORLEVEL% >> c:/temp/tmp.txt

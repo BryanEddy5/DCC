@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <!-- <meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"> -->
+    
+    <script type="text/javascript" src="https://internal-cdn.amazon.com/btk.amazon.com/ajax/libs/jquery/2.1.4/jquery-2.1.4.js"></script>
+
+    <script type="text/javascript">
+    $(document).ready(function(){
+
+	// Initial example for Test Char Code
+	var charCode = 159;
+	$('#charCodeInBox').val(charCode);
+	var tstStr = String.fromCharCode(charCode);
+	$('#charCodeOutBox').val(tstStr);
+
+
+	// Populate the Extended ASCII Characters table
+	for (i = 128; i < 256; i++) {
+	    var newRow = makeNewRow(i);
+	    $("#StandardCharacterTable").append(newRow);
+	}
+
+	function makeNewRow(intVal) {
+	    var newRow = "<tr><td>" + intVal + "</td><td>&#" + intVal + ";</td></tr>"
+	    return newRow;
+	}
+
+	function testString() {
+	    var text = $('#stringBox').val();
+	    for (var i = 0, len = text.length; i < len; i++) {
+		charCode = text.charCodeAt(i);
+		var newRow = makeNewRow(charCode);
+		$("#CustomCharacterTable").append(newRow);
+	    }
+	}
+
+	function clearString() {
+	    $("#CustomCharacterTable").empty();
+	    $("#CustomCharacterTable").append("<tr><th>Number</th><th>Character</th></tr>");
+	}
+
+	function testCharCode() {
+	    var text = $('#charCodeInBox').val();
+	    var charCode = Number(text);
+	    var tstStr = String.fromCharCode(charCode);
+	    $('#charCodeOutBox').val(tstStr);
+	}
+
+	$("#testCharCodeButton").click(testCharCode);
+	$("#testStringButton").click(testString);
+	$("#clearStringButton").click(clearString);
+
+    });
+    </script>
+
+    <title>Test Name Characters</title>
+
+  </head>
+  <body>
+    <div class="container-fluid">
+
+      <div>
+        <h1>Test Name Characters</h1>
+      </div>
+
+      <div>
+        <input id="charCodeInBox"></input>
+        <button id="testCharCodeButton">Test Char Code</button>
+        <input id="charCodeOutBox"></input>
+      </div>
+      <div>
+        <input id="stringBox"></input>
+        <button id="testStringButton">Test String</button>
+        <button id="clearStringButton">Clear Test String Table</button>
+      </div>
+      <div id="DifferentChars">
+      </div>
+      <div>
+        <table id="CustomCharacterTable">
+          <tr>
+            <th>Number</th>
+            <th>Character</th>
+          </tr>
+        </table>
+      </div>
+
+      <hr/>
+      <div>
+	<h1>Extended ASCII Characters</h1>
+      </div>
+      <table id="StandardCharacterTable">
+        <tr>
+          <th>Number</th>
+          <th>Character</th>
+        </tr>
+      </table>
+
+    </div>
+  </body>
+</html>

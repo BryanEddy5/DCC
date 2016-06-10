@@ -1,4 +1,4 @@
-﻿#region Licence
+#region Licence
 
 // Distributed under MIT License
 // ===========================================================
@@ -149,8 +149,34 @@ namespace CameraControl
                 StartApplication();
                 if (_startUpWindow != null)
                     _startUpWindow.Close();
+
+                ShowLocalWebPage(ServiceProvider.Settings);
             }));
             ServiceProvider.Database.Add(new DbEvents(EventType.AppStart));
+        }
+
+        private void ShowLocalWebPage(Settings settings)
+        {
+            // Start an initial local Web page - accept certificate and point to server page
+            // See https://support.microsoft.com/en-us/kb/305703
+
+            // string target = "https://localhost:5513/";
+            string target = String.Format("https://localhost:{0}/", settings.WebserverPort);
+            try
+            {
+                System.Diagnostics.Process.Start(target);
+            }
+            catch
+                (
+                 System.ComponentModel.Win32Exception noBrowser)
+            {
+                if (noBrowser.ErrorCode == -2147467259)
+                    MessageBox.Show(noBrowser.Message);
+            }
+            catch (System.Exception other)
+            {
+                MessageBox.Show(other.Message);
+            }
         }
 
         private void InitWindowManager()
