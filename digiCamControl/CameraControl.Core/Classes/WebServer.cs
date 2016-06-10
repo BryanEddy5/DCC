@@ -72,16 +72,16 @@ namespace CameraControl.Core.Classes
 
                 //moduleManager.Add(new BodyDecodingModule(new UrlFormattedDecoder()));
 
-                var baseDirectory = AppDomain.CurrentDomain.BaseDirectory;
-                // from Griffin.Framework\samples\Networking\CustomProtocol\DemoTest\DemoTest\bin\Debug\Net\cert
-                // X509Certificate2 certificate = new X509Certificate2(baseDirectory + "\\Net\\cert\\AmazonWebCatBundle.pfx", "webcat");
-
                 string issuedBy = "CN=AmazonWebCat";
                 X509Store store = getStore();
                 X509Certificate2 certificate = GetCertificateFromStore(store, issuedBy);
                 if (certificate == null)
                 {
                     Log.Error(String.Format("Could not get certificate issued by {0}", issuedBy));
+                    // Use legacy certificate for one iteration
+                    var baseDirectory = AppDomain.CurrentDomain.BaseDirectory;
+                    // from Griffin.Framework\samples\Networking\CustomProtocol\DemoTest\DemoTest\bin\Debug\Net\cert
+                    // certificate = new X509Certificate2(baseDirectory + "\\Net\\cert\\AmazonWebCatBundle.pfx", "webcat");
                 }
 
                 // Make sure things are loaded for serialization

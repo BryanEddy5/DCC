@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -25,12 +25,12 @@ namespace CertificateInstaller
                 DebugWriteLine("==Hello from the CertificateInstaller at " + DateTime.Now.ToString());
 
                 string cwd = Directory.GetCurrentDirectory();
-                DebugWriteLine("cwd is " + cwd);
-                //string exeDir = GetExecutingDirectoryName();
-                //DebugWriteLine("exeDir is " + exeDir);
+                DebugWriteLine("cwd: " + cwd);
+                string exeDir = GetExecutingDirectoryName();
+                DebugWriteLine("exeDir: " + exeDir);
 
-                string issuedBy = "CN=AmazonWebCat";
-                string certFile = null; // @"C:\temp\certificate\AmazonWebCatBundle.pfx";
+                string issuedBy = "CN=AmazonWebCat"; // default
+                string certFile = null; // e.g., @"C:\temp\certificate\AmazonWebCatBundle.pfx";
                 string password = null;
 
                 for (int i = 0; i < args.Length; i++)
@@ -54,29 +54,40 @@ namespace CertificateInstaller
                     }
                 }
 
-                // Make sure the path is absolute
-                certFile = @"C:\temp\certificate\AmazonWebCatBundle.pfx"; // test elevation
-                certFile = Path.GetFullPath(certFile);
-                DebugWriteLine("certFile is " + certFile);
+                // Make sure the path is absolute exeDir
+                if (certFile != null)
+                {
+                    certFile = Path.GetFullPath(Path.Combine(exeDir, certFile));
+                }
+                DebugWriteLine(String.Format("certFile: {0}", certFile));
+                DebugWriteLine(String.Format("issuedBy: {0}", issuedBy));
 
                 X509Store store = getStore();
                 X509Certificate2 certificate = GetCertificateFromStore(store, issuedBy);
-                if (certificate == null)
+                if (password != null && certFile != null)
                 {
                     DebugWriteLine("==Making X509Certificate2 object");
                     certificate = new X509Certificate2(certFile, password);
                     DebugWriteLine("==Adding the certificate to the store");
                     AddPfxFileToStore(certFile, password);
-                    DebugWriteLine("==Getting the certificate");
-                    certificate = GetCertificateFromStore(store, issuedBy); // test
-                    DebugWriteLine("==Updating permissions on the certificate");
+                }
+
+                DebugWriteLine("==Getting the certificate");
+                certificate = GetCertificateFromStore(store, issuedBy);
+
+                if (certificate != null)
+                {
+                    DebugWriteLine("==Updating permissions on certificate");
                     UpdatePermissions(certificate);
                 }
                 else
                 {
-                    DebugWriteLine("==Updating permissions on EXISTING certificate");
-                    UpdatePermissions(certificate);
+                    DebugWriteLine(String.Format("Certificate not found: issuedBy is {0}", issuedBy));
                 }
+            }
+            catch (Exception ex)
+            {
+                DebugWriteLine("Exception during processing: " + ex);
             }
             finally
             {
@@ -116,14 +127,13 @@ namespace CertificateInstaller
                 logStream.WriteLine(message);
             }
             Debug.WriteLine(message);
-            Console.WriteLine(message);
         }
 
         private static X509Store getStore()
         {
             // Get from "Personal"
             X509Store store = new X509Store(StoreLocation.LocalMachine);
-            // Get from “Trusted Root Certification Authorities”
+            // Get from "Trusted Root Certification Authorities"
             // X509Store store = new X509Store(StoreName.Root);
             return store;
         }
@@ -165,7 +175,7 @@ namespace CertificateInstaller
                 System.Diagnostics.ProcessStartInfo startInfo = new System.Diagnostics.ProcessStartInfo();
                 startInfo.WindowStyle = System.Diagnostics.ProcessWindowStyle.Hidden;
                 string systemFolder = Environment.GetFolderPath(Environment.SpecialFolder.System);
-                startInfo.FileName = Path.Combine(systemFolder, "certutil.exe"); // @"C:\WINDOWS\system32\certutil.exe";
+                startInfo.FileName = Path.Combine(systemFolder, "certutil.exe"); // i.e., @"C:\WINDOWS\system32\certutil.exe";
                 startInfo.Arguments = String.Format("-p \"{0}\" -importpfx \"{1}\"", password, pfxFile);
                 process.StartInfo = startInfo;
                 process.Start();

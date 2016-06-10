@@ -79,10 +79,6 @@ namespace Setup
 
             Binary certBinary = new Binary(new Id("WebCatCertBinaryId"), @"Net\cert\AmazonWebCatBundle.pfx"); // relative to Setup at build time
             Certificate certObject = new Certificate("WebCatCert", StoreLocation.localMachine, StoreName.personal, "WebCatCertBinaryId");
-            //Certificate certObject = new Certificate("WebCatCert", StoreLocation.localMachine, StoreName.personal, @"Net\cert\AmazonWebCatBundle.pfx", authorityRequest: false);
-            /////Certificate certObject = new Certificate("WebCatCert", StoreLocation.localMachine, StoreName.personal, @"C:\temp\certificate\AmazonWebCatBundle.pfx", authorityRequest: false);
-            // The following does not work: installer does not finish and no certificate installed
-            //Certificate certObject = new Certificate("WebCatCert", StoreLocation.localMachine, StoreName.personal, @"C:\temp\certificate\AmazonWebCatBundle.pfx", authorityRequest: true);
             certObject.PFXPassword = "webcat";
 
             Project project = new Project("digiCamControl",
@@ -104,32 +100,22 @@ namespace Setup
                     "width","640"),
                 new RegValue(appFeature, RegistryHive.CurrentUser,
                     @"SOFTWARE\IP Webcam",
-                    "height", "426")
-                    ,
-                certBinary
-                ,
+                    "height", "426"),
+                certBinary,
                 certObject
             );
 
-            //project.Certificates = new Certificate[] {
-            //    certObject
-            //};
-
-            //string certInstallArgs = @"-p webcat -importpfx C:\temp\certificate\AmazonWebCatBundle.pfx";
-            string certInstallArgs = @"-p webcat -importpfx Net\cert\AmazonWebCatBundle.pfx";
-            /////PathFileAction certificateAction = new PathFileAction(@"C:\WINDOWS\system32\certutil.exe", @"-p webcat -importpfx C:\temp\certificate\AmazonWebCatBundle.pfx", "INSTALLDIR", Return.asyncNoWait, When.Before, Step.InstallFinalize, Condition.NOT_Installed, Sequence.InstallExecuteSequence);
-            /////PathFileAction certificateAction = new PathFileAction(@"C:\temp\certificate\InstallCert2.bat", certInstallArgs, @"INSTALLDIR", Return.asyncNoWait, When.Before, Step.InstallFinalize, Condition.NOT_Installed, Sequence.InstallExecuteSequence);
-            //PathFileAction certificateAction = new PathFileAction(@"INSTALLDIR\Tools\CertificateInstaller.bat", certInstallArgs, @"INSTALLDIR", Return.asyncNoWait, When.Before, Step.InstallFinalize, Condition.NOT_Installed, Sequence.InstallExecuteSequence);
-            InstalledFileAction certificateAction = new InstalledFileAction("CertificateInstaller.exe", certInstallArgs, Return.asyncNoWait, When.Before, Step.InstallFinalize, Condition.NOT_Installed, Sequence.InstallExecuteSequence);
+            // certificate path is relative to CertificateInstaller during installation
+            //string certInstallArgs = @"-p webcat -importpfx ..\Net\cert\AmazonWebCatBundle.pfx -issuedBy CN=AmazonWebCat";
+            string certUpdateArgs = "-issuedBy CN=AmazonWebCat";
+            InstalledFileAction certificateAction = new InstalledFileAction("CertificateInstaller.exe", certUpdateArgs, Return.asyncNoWait, When.Before, Step.InstallFinalize, Condition.NOT_Installed, Sequence.InstallExecuteSequence);
+            // Make sure that CertificateInstaller gets run "elevated" with the following and Return.asynNoWait
             certificateAction.Attributes = new Dictionary<string, string>() {
                 {"Execute", "deferred"},
                 {"Impersonate", "no"}
             };
 
             project.AddAction(new WixSharp.Action[] {
-                ////new InstalledFileAction(@"C:\WINDOWS\system32\certutil.exe", @"-p webcat -importpfx C:\temp\certificate\AmazonWebCatBundle.pfx", Return.asyncNoWait, When.After, Step.InstallFinalize, Condition.NOT_Installed, Sequence.InstallExecuteSequence),
-                                //execute existing application
-                ////new PathFileAction(@"C:\WINDOWS\system32\certutil.exe", @"-p webcat -importpfx C:\temp\certificate\AmazonWebCatBundle.pfx", "INSTALLDIR", Return.asyncNoWait, When.After, Step.InstallFinalize, Condition.NOT_Installed, Sequence.InstallExecuteSequence),
                 certificateAction
             });
 
