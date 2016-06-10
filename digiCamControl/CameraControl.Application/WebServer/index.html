@@ -6,9 +6,11 @@
 
     <script type="text/javascript" src="https://internal-cdn.amazon.com/btk.amazon.com/ajax/libs/jquery/2.1.4/jquery-2.1.4.js"></script>
 
-    <style>
+    <style type="text/css">
       .goodState   {color: green;}
       .badState    {color: red;}
+      ul           {list-style: none;}
+      ul li:before {content: "\00BB \0020";}
     </style>
 
     <script>
@@ -32,8 +34,12 @@
                 if (textStatus === "timeout") {
                     msg = msg + " Make sure DCC is running."
                 }
+                $('#SoftwareVersionId').text("Unknown");
                 $('#AjaxStatusId').text(msg);
             }).done(function (jsonResult) {
+                var softwareVersion = jsonResult["version"];
+                $('#SoftwareVersionId').text(softwareVersion);
+
                 var cameraSerialNumber =  jsonResult["cameraSerialNumber"];
                 var msg;
                 if (cameraSerialNumber) {
@@ -58,6 +64,7 @@
 
         function clearStatus() {
             $('#StatusDataId').text("");
+            $('#SoftwareVerionId').text("");
             $('#AjaxStatusId').text("");
             addRemoveClass("AjaxStatusId", "badState", "goodState"); // assume the worst
         }
@@ -83,12 +90,21 @@
       </div>
     </div>
     <h3>
-      Welcome to the WebCat Startup page.  Visit
-      <a href="https://photoretakes.corp.amazon.com/badge-operations">Badge Printing Operations</a>
-      to begin taking photos!
+      Welcome to the WebCat Startup page.
     </h3>
+    <p>
+      <ul>
+        <li>
+          Visit
+          <a href="https://photoretakes.corp.amazon.com/badge-operations">Badge Printing Operations</a>
+          to begin taking photos!
+        </li>
+      </ul>
+    </p>
     <p></p>
     <p>
+      Software Version: <b><span id="SoftwareVersionId"></span></b>
+      <br/>
       Camera Status: <b><span class="goodState" id="AjaxStatusId"></span></b>
     </p>
     <div>

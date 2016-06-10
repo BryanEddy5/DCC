@@ -78,10 +78,10 @@ namespace CameraControl.Core.Classes
                 if (certificate == null)
                 {
                     Log.Error(String.Format("Could not get certificate issued by {0}", issuedBy));
-                    // Use legacy certificate for one iteration
+                    // Use legacy certificate for one version iteration
                     var baseDirectory = AppDomain.CurrentDomain.BaseDirectory;
                     // from Griffin.Framework\samples\Networking\CustomProtocol\DemoTest\DemoTest\bin\Debug\Net\cert
-                    // certificate = new X509Certificate2(baseDirectory + "\\Net\\cert\\AmazonWebCatBundle.pfx", "webcat");
+                    certificate = new X509Certificate2(baseDirectory + "\\Net\\cert\\AmazonWebCatBundle.pfx", "webcat");
                 }
 
                 // Make sure things are loaded for serialization
