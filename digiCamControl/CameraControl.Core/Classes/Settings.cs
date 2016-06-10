@@ -139,6 +139,18 @@ namespace CameraControl.Core.Classes
             }
         }
 
+        private string _softwareVersion;
+
+        public string SoftwareVersion
+        {
+            get { return _softwareVersion; }
+            set
+            {
+                _softwareVersion = value;
+                NotifyPropertyChanged("SoftwareVersion");
+            }
+        }
+
         private bool _disableNativeDrivers;
 
         public bool DisableNativeDrivers
@@ -993,6 +1005,7 @@ namespace CameraControl.Core.Classes
         public void ResetSettings()
         {
             Actions = new AsyncObservableCollection<WindowCommandItem>();
+            SoftwareVersion = CurrentSoftwareVersion();
             DisableNativeDrivers = false;
             AutoPreview = true;
             LastUpdateCheckDate = DateTime.MinValue;
@@ -1274,8 +1287,13 @@ namespace CameraControl.Core.Classes
                     XmlSerializer mySerializer =
                         new XmlSerializer(typeof (Settings));
                     FileStream myFileStream = new FileStream(ConfigFile, FileMode.Open);
-                    defaultSettings = (Settings) mySerializer.Deserialize(myFileStream);
+                    Settings defaultSettings0 = (Settings)mySerializer.Deserialize(myFileStream);
                     myFileStream.Close();
+                    // Only use settings for the current version - cth
+                    if (CurrentSoftwareVersion().Equals(defaultSettings0.SoftwareVersion))
+                    {
+                        defaultSettings = defaultSettings0;
+                    }
                 }
             }
             catch (Exception exception)
@@ -1294,6 +1312,11 @@ namespace CameraControl.Core.Classes
                 return PhotoSessions.FirstOrDefault(photoSession => photoSession.Name == name);
             }
             return null;
+        }
+
+        public string CurrentSoftwareVersion()
+        {
+            return typeof(Settings).Assembly.GetName().Version.ToString();
         }
 
         public CameraPreset GetPreset(string name)

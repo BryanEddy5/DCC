@@ -280,8 +280,8 @@ namespace CameraControl.Core.Classes
 
                             CameraInfo cameraInfo = new CameraInfo(CameraHelper.GetSelectedCameraDevice());
 
-                            var version = typeof(WebServerModule).Assembly.GetName().Version;
-                            uploadResponse = new UploadResponse("OK", version.ToString(), fileName, id, length, dateString, orientation, cameraInfo, imageDataBase64);
+                            string version = ServiceProvider.Settings.CurrentSoftwareVersion();
+                            uploadResponse = new UploadResponse("OK", version, fileName, id, length, dateString, orientation, cameraInfo, imageDataBase64);
                         }
 
                         var s = ResponseUtils.jsonpResponse(jsoncallback, JsonConvert.SerializeObject(uploadResponse));
@@ -295,8 +295,8 @@ namespace CameraControl.Core.Classes
 
                         CameraInfo cameraInfo = new CameraInfo(CameraHelper.GetSelectedCameraDevice());
 
-                        var version = typeof(WebServerModule).Assembly.GetName().Version;
-                        StatusResponse statusResponse = new StatusResponse("OK", version.ToString(), dateString, cameraInfo);
+                        string version = ServiceProvider.Settings.CurrentSoftwareVersion();
+                        StatusResponse statusResponse = new StatusResponse("OK", version, dateString, cameraInfo);
                         var s = ResponseUtils.jsonpResponse(jsoncallback, JsonConvert.SerializeObject(statusResponse));
 
                         SendData(context, Encoding.UTF8.GetBytes(s));
