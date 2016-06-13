@@ -185,6 +185,9 @@ namespace CameraControl.Layouts
                         if (File.Exists(fileItem.FileName))
                             FileSystem.DeleteFile(fileItem.FileName, UIOption.OnlyErrorDialogs,
                                                   RecycleOption.SendToRecycleBin);
+                        if (File.Exists(fileItem.PreviewFileName))
+                            FileSystem.DeleteFile(fileItem.PreviewFileName, UIOption.OnlyErrorDialogs,
+                                                  RecycleOption.SendToRecycleBin);
                         fileItem.RemoveThumbs();
                         ServiceProvider.Settings.DefaultSession.Files.Remove(fileItem);
                     }

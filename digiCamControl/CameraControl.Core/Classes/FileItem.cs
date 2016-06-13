@@ -477,6 +477,35 @@ namespace CameraControl.Core.Classes
         public bool IsLoading { get; set; }
 
         /// <summary>
+        /// Gets the preview file name.
+        /// </summary>
+        /// <value>
+        /// The preview file name.
+        /// </value>
+        public string PreviewFileName
+        {
+            get {
+                return GetPreviewFileName(FileName);
+            }
+        }
+
+        public static string GetPreviewFileName(string filename)
+        {
+            string previewName = "";
+            if (filename != null)
+            {
+                string name = Path.GetFileName(filename);
+                if (!String.IsNullOrEmpty(name))
+                {
+                    name = name.Replace(".jpg", "_preview.jpg");
+                    string folder = Path.GetDirectoryName(filename);
+                    previewName = Path.Combine(folder, "Previews", name);
+                }
+            }
+            return previewName;
+        }
+
+        /// <summary>
         /// Gets the quick thumb file name.
         /// </summary>
         /// <value>

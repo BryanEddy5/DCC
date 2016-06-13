@@ -494,7 +494,7 @@ namespace CameraControl
 
                 StaticHelper.Instance.SystemMessage = "Photo Captured";
 
-                string quickThumb = QuickThumbPath(fileName);
+                string quickThumb = FileItem.GetPreviewFileName(fileName);
                 var watch = System.Diagnostics.Stopwatch.StartNew();
                 MagickImage image = CopyRotateThumbImage(tempFile, quickThumb);
 
@@ -663,17 +663,6 @@ namespace CameraControl
                 // Save the result
                 image.Write(fileName);
             }
-        }
-
-        private string QuickThumbPath(string rotated)
-        {
-            string rotatedFilename = Path.GetFileName(rotated);
-            string quickThumbFilename = rotatedFilename.Replace(".jpg", "_preview.jpg");
-            var sessionFolder = Path.GetDirectoryName(rotated);
-            string quickThumb = Path.Combine(sessionFolder, "Previews", quickThumbFilename);
-            PhotoUtils.CreateFolder(quickThumb);
-
-            return quickThumb;
         }
 
         private MagickImage CopyRotateThumbImage(string source, string quickThumbPath)
