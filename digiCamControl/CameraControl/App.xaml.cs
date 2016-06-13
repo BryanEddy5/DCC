@@ -49,6 +49,8 @@ using ImageMagick;
 using MahApps.Metro;
 using Application = System.Windows.Application;
 using MessageBox = System.Windows.MessageBox;
+using System.Drawing;
+using System.Windows.Forms;
 
 #endregion
 
@@ -150,12 +152,13 @@ namespace CameraControl
                 if (_startUpWindow != null)
                     _startUpWindow.Close();
 
-                ShowLocalWebPage(ServiceProvider.Settings);
+                ShowStartupWebPage(ServiceProvider.Settings);
+                PrepImageLibrary();
             }));
             ServiceProvider.Database.Add(new DbEvents(EventType.AppStart));
         }
 
-        private void ShowLocalWebPage(Settings settings)
+        private void ShowStartupWebPage(Settings settings)
         {
             // Start an initial local Web page - accept certificate and point to server page
             // See https://support.microsoft.com/en-us/kb/305703
@@ -247,6 +250,74 @@ namespace CameraControl
             mainWindowPlugin.Show();
             if (mainWindowPlugin is Window)
                 ((Window)mainWindowPlugin).Activate();
+        }
+
+        private void PrepImageLibrary()
+        {
+            Dispatcher.Invoke(new Action(delegate
+            {
+                Log.Debug("Prepping Image API ...");
+                var watch = System.Diagnostics.Stopwatch.StartNew();
+                string localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+                string localImageMagickDir = Path.Combine(localAppData, "ImageMagick");
+                if (!Directory.Exists(localImageMagickDir))
+                {
+                    Log.Debug("Prepping Image API, copying files ...");
+                    string exeDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+                    string installedImageMagickDir = Path.Combine(exeDir, "Tools", "ImageMagick");
+                    DirectoryCopy(installedImageMagickDir, localImageMagickDir, true);
+                }
+                watch.Stop();
+                Log.Debug("ms for ImageMagick prep: " + watch.ElapsedMilliseconds);
+
+                // Test that we're loaded and ready
+                watch = System.Diagnostics.Stopwatch.StartNew();
+                MagickImage image = new MagickImage(new MagickColor(Color.Black), 100, 200);
+                image.Thumbnail(50, 100);
+                watch.Stop();
+                Log.Debug("ms for ImageMagick test: " + watch.ElapsedMilliseconds);
+
+                Log.Debug("Prepping Image API complete");
+            }));
+        }
+
+        // From: https://msdn.microsoft.com/en-us/library/bb762914.aspx
+        private void DirectoryCopy(string sourceDirName, string destDirName, bool copySubDirs)
+        {
+            // Get the subdirectories for the specified directory.
+            DirectoryInfo dir = new DirectoryInfo(sourceDirName);
+
+            if (!dir.Exists)
+            {
+                throw new DirectoryNotFoundException(
+                    "Source directory does not exist or could not be found: "
+                    + sourceDirName);
+            }
+
+            DirectoryInfo[] dirs = dir.GetDirectories();
+            // If the destination directory doesn't exist, create it.
+            if (!Directory.Exists(destDirName))
+            {
+                Directory.CreateDirectory(destDirName);
+            }
+
+            // Get the files in the directory and copy them to the new location.
+            System.IO.FileInfo[] files = dir.GetFiles();
+            foreach (System.IO.FileInfo file in files)
+            {
+                string temppath = Path.Combine(destDirName, file.Name);
+                file.CopyTo(temppath, false);
+            }
+
+            // If copying subdirectories, copy them and their contents to new location.
+            if (copySubDirs)
+            {
+                foreach (DirectoryInfo subdir in dirs)
+                {
+                    string temppath = Path.Combine(destDirName, subdir.Name);
+                    DirectoryCopy(subdir.FullName, temppath, copySubDirs);
+                }
+            }
         }
 
         private void WindowsManager_Event(string cmd, object o)

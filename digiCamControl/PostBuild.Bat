@@ -16,6 +16,10 @@ rem Copy certificate installer
 if not exist %1CameraControl\Bin\%2\Tools MD %1CameraControl\Bin\%2\Tools
 xcopy %1CertificateInstaller\Bin\%2\CertificateInstaller.exe %1CameraControl\Bin\%2\Tools\ /R /Y
 
+rem Copy ImageMagick folder - caution - this may get out of date
+if not exist %1CameraControl\Bin\%2\Tools\ImageMagick MD %1CameraControl\Bin\%2\Tools\ImageMagick
+xcopy %1ImageMagick %1CameraControl\Bin\%2\Tools\ImageMagick /Y /E /R /I
+
 REM Moved to MtpTester to avoid build order issues
 REM copy %1MtpTester\Bin\%2\MtpTester.exe %1CameraControl\Bin\%2\ /Y
 REM echo %ERRORLEVEL% >> c:/temp/tmp.txt

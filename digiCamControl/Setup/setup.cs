@@ -66,7 +66,10 @@ namespace Setup
                 new Dir(appFeature, "x86",
                     new DirFiles(appFeature, @"x86\*.*")),
                 new Dir(appFeature, "Tools",
-                    new DirFiles(appFeature, @"Tools\*.*")),
+                    new DirFiles(appFeature, @"Tools\*.*"),
+                    new Dir(appFeature, "ImageMagick",
+                        new DirFiles(appFeature, @"Tools\ImageMagick\*.*"))
+                    ),
                 new Dir(appFeature, "WebServer",
                     new Files(appFeature, @"WebServer\*.*"))
                 );

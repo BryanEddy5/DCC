@@ -1088,10 +1088,16 @@ namespace CameraControl.Devices.Canon
 
         private uint ResetShutterButton()
         {
+            uint status = 0;
             Camera.SendCommand(Edsdk.CameraCommand_DoEvfAf, 0);
             //ErrorCodes.GetCanonException(Camera.SendCommand(Edsdk.CameraCommand_DoEvfAf, 0));
-            return Camera.SendCommand(Edsdk.CameraCommand_PressShutterButton,
-                (int) Edsdk.EdsShutterButton.CameraCommand_ShutterButton_OFF);
+            if (Camera != null) // can become null in the line above - cth
+            {
+                status = Camera.SendCommand(Edsdk.CameraCommand_PressShutterButton,
+                    (int)Edsdk.EdsShutterButton.CameraCommand_ShutterButton_OFF);
+            }
+
+            return status;
         }
 
         public override void CapturePhotoNoAf()
@@ -1235,11 +1241,15 @@ namespace CameraControl.Devices.Canon
 
         public override void StopLiveView()
         {
-            if (Camera == null)
-                return;
-            ResetShutterButton();
-            //if (Camera.IsInLiveViewMode)
-            Camera.StopLiveView();
+            if (Camera != null)
+            {
+                ResetShutterButton();
+                //if (Camera.IsInLiveViewMode)
+                if (Camera != null) // Can become null above
+                {
+                    Camera.StopLiveView();
+                }
+            }
         }
 
         public override void AutoFocus()

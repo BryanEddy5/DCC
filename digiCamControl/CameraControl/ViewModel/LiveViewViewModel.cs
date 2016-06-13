@@ -2334,13 +2334,16 @@ namespace CameraControl.ViewModel
                         }
                     }
                 } while (retry && retryNum < 35);
-                Application.Current.Dispatcher.BeginInvoke(new Action(() =>
+                if (Application.Current != null)
                 {
-                    if (_videoSource != null && _videoSource.IsPlaying)
+                    Application.Current.Dispatcher.BeginInvoke(new Action(() =>
                     {
-                        _videoSource.Stop();
-                    }
-                }));
+                        if (_videoSource != null && _videoSource.IsPlaying)
+                        {
+                            _videoSource.Stop();
+                        }
+                    }));
+                }
             }
             catch (Exception exception)
             {
