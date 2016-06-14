@@ -209,7 +209,7 @@ namespace CameraControl.Core.Classes
                                 item.IsChecked = true;
                             }
 
-                            id = CapturedHelper.startCapture();
+                            id = CapturedHelper.startCapture(subjectEmployeeId, subjectAlias);
                             Log.Debug("-- jsonp.api id is " + id);
 
                             string camera = queryString["camera"];

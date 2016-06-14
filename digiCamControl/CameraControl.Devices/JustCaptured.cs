@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -13,6 +13,8 @@ namespace CameraControl.Devices
         public string ImageFilename { get; set; }
         public string PreviewFilename { get; set; }
         public string ImageId { get; set; }
+        public string SubjectEmployeeId { get; set; }
+        public string SubjectAlias { get; set; }
         public CaptureState State { get; set; }
         public string Orientation { get; set; }
     }

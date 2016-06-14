@@ -560,7 +560,7 @@ namespace CameraControl.Core.Classes
                 // web requests may not specify a template - cth
                 if (string.IsNullOrEmpty(FileNameTemplate))
                 {
-                    FileNameTemplate = "[Counter 4 digit]";
+                    FileNameTemplate = String.Format("{0}_[Counter 4 digit]", Path.GetFileNameWithoutExtension(file)); ;
                 }
 
                 var ext = Path.GetExtension(file);

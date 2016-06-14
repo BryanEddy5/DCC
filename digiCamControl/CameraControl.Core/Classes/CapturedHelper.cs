@@ -34,7 +34,7 @@ namespace CameraControl.Core.Classes
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
-        public static string startCapture()
+        public static string startCapture(string subjectEmployeeId, string subjectAlias)
         {
             string id = null;
             _captureDevice = CameraHelper.GetSelectedCameraDevice();
@@ -42,6 +42,8 @@ namespace CameraControl.Core.Classes
             {
                 id = Guid.NewGuid().ToString("N");
                 setId(id);
+                setSubjectEmployeeId(subjectEmployeeId);
+                setSubjectAlias(subjectAlias);
                 setCaptureState(JustCaptured.CaptureState.GETTING_PREVIEW);
                 _previewSemaphore = new Semaphore(0, maxCount);
                 _photoSemaphore = new Semaphore(0, maxCount);
@@ -60,6 +62,32 @@ namespace CameraControl.Core.Classes
         public static void setId(string id)
         {
             getJustCaptured().ImageId = id;
+        }
+
+        [MethodImpl(MethodImplOptions.Synchronized)]
+        public static string getSubjectEmployeeId()
+        {
+            string subjectEmployeeId = getJustCaptured().SubjectEmployeeId;
+            return subjectEmployeeId;
+        }
+
+        [MethodImpl(MethodImplOptions.Synchronized)]
+        public static void setSubjectEmployeeId(string subjectEmployeeId)
+        {
+            getJustCaptured().SubjectEmployeeId = subjectEmployeeId;
+        }
+
+        [MethodImpl(MethodImplOptions.Synchronized)]
+        public static string getSubjectAlias()
+        {
+            string subjectAlias = getJustCaptured().SubjectAlias;
+            return subjectAlias;
+        }
+
+        [MethodImpl(MethodImplOptions.Synchronized)]
+        public static void setSubjectAlias(string subjectAlias)
+        {
+            getJustCaptured().SubjectAlias = subjectAlias;
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]

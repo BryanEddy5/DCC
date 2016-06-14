@@ -436,8 +436,11 @@ namespace CameraControl
                 string fileName = "";
                 if (!session.UseOriginalFilename || eventArgs.CameraDevice.CaptureInSdRam)
                 {
-                    fileName =
-                        session.GetNextFileName(eventArgs.FileName, eventArgs.CameraDevice);
+                    string subjectEmployeeId = CapturedHelper.getSubjectEmployeeId() ?? "";
+                    string id = CapturedHelper.getId() ?? "";
+                    string baseName = String.Format("{0}_{1}.jpg", subjectEmployeeId, id);
+
+                    fileName = session.GetNextFileName(baseName, eventArgs.CameraDevice);
                 }
                 else
                 {
