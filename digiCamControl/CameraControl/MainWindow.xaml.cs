@@ -498,6 +498,12 @@ namespace CameraControl
                 StaticHelper.Instance.SystemMessage = "Photo Captured";
 
                 string quickThumb = FileItem.GetPreviewFileName(fileName);
+
+                if (!Directory.Exists(Path.GetDirectoryName(quickThumb)))
+                {
+                    Directory.CreateDirectory(Path.GetDirectoryName(quickThumb));
+                }
+
                 var watch = System.Diagnostics.Stopwatch.StartNew();
                 MagickImage image = CopyRotateThumbImage(tempFile, quickThumb);
 
