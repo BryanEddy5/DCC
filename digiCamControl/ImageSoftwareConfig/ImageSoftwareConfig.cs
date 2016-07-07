@@ -1,7 +1,8 @@
 ﻿using ImageMagick;
 using System;
 using System.Collections.Generic;
-using System.Drawing;
+using System.Diagnostics;
+// using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -14,13 +15,17 @@ namespace ImageSoftwareConfig
     // Otherwise, the first picture takes about 40 seconds for each user on a given machine.
     class ImageSoftwareConfig
     {
+        static string logFile = null; // @"C:\temp\ImageSoftwareConfig.log";
+        static StreamWriter logStream = null;
+
         static void Main(string[] args)
         {
             // defaults
             string imageSoftwareName = "ImageMagick";
             string appName = "digiCamControl";
 
-            for (int i = 0; i < args.Length; i++)
+
+                for (int i = 0; i < args.Length; i++)
             {
                 string arg = args[i];
                 if ("--imageSoftwareName".Equals(arg))
@@ -46,23 +51,45 @@ namespace ImageSoftwareConfig
 
         public void run(string localImageMagickDir, string commonImageMagickDir)
         {
-            // Test that we're loaded and ready - this populates localImageMagickDir if needed
-            MagickImage image = new MagickImage(new MagickColor(Color.Black), 100, 200);
-            image.Thumbnail(50, 100);
-
-            if (Directory.Exists(localImageMagickDir))
+            try
             {
-                if (Directory.Exists(commonImageMagickDir))
-                {
-                    // Make sure we get a fresh copy in case there have been updates
-                    Directory.Delete(commonImageMagickDir, true);
-                }
-                if (!Directory.Exists(commonImageMagickDir))
-                {
-                    Directory.CreateDirectory(commonImageMagickDir);
-                }
+                beginLogging();
+                DebugWriteLine("==Hello from the ImageSoftwareConfig at " + DateTime.Now.ToString());
+                DebugWriteLine("  localImageMagickDir is " + localImageMagickDir);
+                DebugWriteLine("  commonImageMagickDir is " + commonImageMagickDir);
 
-                DirectoryCopy(localImageMagickDir, commonImageMagickDir, true);
+                // Test that we're loaded and ready - this populates localImageMagickDir if needed
+                var watch = System.Diagnostics.Stopwatch.StartNew();
+                // Color drawingColor = Color.Black;
+                MagickColor magickColor = new MagickColor("#000000");
+                MagickImage image = new MagickImage(magickColor, 100, 200);
+                image.Thumbnail(50, 100);
+                watch.Stop();
+                DebugWriteLine("ms for ImageMagick test: " + watch.ElapsedMilliseconds);
+
+                if (Directory.Exists(localImageMagickDir))
+                {
+                    if (Directory.Exists(commonImageMagickDir))
+                    {
+                        // Make sure we get a fresh copy in case there have been updates
+                        Directory.Delete(commonImageMagickDir, true);
+                    }
+                    if (!Directory.Exists(commonImageMagickDir))
+                    {
+                        Directory.CreateDirectory(commonImageMagickDir);
+                    }
+
+                    DirectoryCopy(localImageMagickDir, commonImageMagickDir, true);
+                }
+            }
+            catch (Exception ex)
+            {
+                DebugWriteLine("Exception during processing: " + ex);
+            }
+            finally
+            {
+                DebugWriteLine("==Goodbye from the ImageSoftwareConfig");
+                endLogging();
             }
         }
 
@@ -104,5 +131,36 @@ namespace ImageSoftwareConfig
                 }
             }
         }
+
+        private void beginLogging()
+        {
+            if (logFile != null)
+            {
+                logStream = new StreamWriter(logFile);
+            }
+        }
+
+        private void endLogging()
+        {
+            if (logStream != null)
+            {
+                logStream.Flush();
+                logStream.Close();
+                logStream.Dispose();
+                logStream = null;
+            }
+
+        }
+
+        private void DebugWriteLine(string message)
+        {
+            if (logStream != null)
+            {
+                logStream.WriteLine(message);
+            }
+            Debug.WriteLine(message);
+        }
+
+
     }
 }

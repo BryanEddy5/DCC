@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -14,7 +14,7 @@ namespace CertificateInstaller
 {
     class CertificateInstaller
     {
-        static string logFile = null; // e.g., @"C:\temp\certificate\tmp2.log";
+        static string logFile = null; // e.g., @"C:\temp\CertificateInstaller.log";
         static StreamWriter logStream = null;
 
         static void Main(string[] args)
