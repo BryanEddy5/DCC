@@ -258,24 +258,38 @@ namespace CameraControl
             {
                 Log.Debug("Prepping Image API ...");
                 var watch = System.Diagnostics.Stopwatch.StartNew();
-                string localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-                string localImageMagickDir = Path.Combine(localAppData, "ImageMagick");
-                if (!Directory.Exists(localImageMagickDir))
+
+                string imageSoftwareName = "ImageMagick";
+                string localImageSoftwareDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), imageSoftwareName);
+                string commonImageSoftwareDir = Path.Combine(Settings.DataFolder, imageSoftwareName);
+
+                if (!Directory.Exists(localImageSoftwareDir))
                 {
-                    Log.Debug("Prepping Image API, copying files ...");
-                    string exeDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-                    string installedImageMagickDir = Path.Combine(exeDir, "Tools", "ImageMagick");
-                    DirectoryCopy(installedImageMagickDir, localImageMagickDir, true);
+                    if (Directory.Exists(commonImageSoftwareDir))
+                    {
+                        Log.Debug("Prepping Image API, copying common files ...");
+                        DirectoryCopy(commonImageSoftwareDir, localImageSoftwareDir, true);
+                    }
                 }
                 watch.Stop();
                 Log.Debug("ms for ImageMagick prep: " + watch.ElapsedMilliseconds);
 
-                // Test that we're loaded and ready
+                // Test that we're loaded and ready - this populates localImageMagickDir if needed
                 watch = System.Diagnostics.Stopwatch.StartNew();
                 MagickImage image = new MagickImage(new MagickColor(Color.Black), 100, 200);
                 image.Thumbnail(50, 100);
                 watch.Stop();
                 Log.Debug("ms for ImageMagick test: " + watch.ElapsedMilliseconds);
+
+                if (!Directory.Exists(localImageSoftwareDir)) {
+                    Log.Error("Prepping Image API failed.  localImageMagickDir not created as expected: " + localImageSoftwareDir);
+                }
+                else if (!Directory.Exists(commonImageSoftwareDir))
+                {
+                    // This can happen with a copy from zip files rather than an installer
+                    // Create the common directory for other users of the machine
+                    DirectoryCopy(localImageSoftwareDir, commonImageSoftwareDir, true);
+                }
 
                 Log.Debug("Prepping Image API complete");
             }));

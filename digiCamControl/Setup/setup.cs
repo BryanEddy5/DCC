@@ -66,15 +66,10 @@ namespace Setup
                 new Dir(appFeature, "x86",
                     new DirFiles(appFeature, @"x86\*.*")),
                 new Dir(appFeature, "Tools",
-                    new DirFiles(appFeature, @"Tools\*.*"),
-                    new Dir(appFeature, "ImageMagick",
-                        new DirFiles(appFeature, @"Tools\ImageMagick\*.*"))
-                    ),
+                    new DirFiles(appFeature, @"Tools\*.*")),
                 new Dir(appFeature, "WebServer",
                     new Files(appFeature, @"WebServer\*.*"))
                 );
-
-
 
             var baseDir = new Dir(@"%ProgramFiles%",
                 appDir
@@ -109,8 +104,8 @@ namespace Setup
             );
 
             // certificate path is relative to CertificateInstaller during installation
-            //string certInstallArgs = @"-p webcat -importpfx ..\Net\cert\AmazonWebCatBundle.pfx -issuedBy CN=AmazonWebCat";
-            string certUpdateArgs = "-issuedBy CN=AmazonWebCat";
+            //string certInstallArgs = @"--p webcat --importpfx ..\Net\cert\AmazonWebCatBundle.pfx --issuedBy CN=AmazonWebCat";
+            string certUpdateArgs = "--issuedBy CN=AmazonWebCat";
             InstalledFileAction certificateAction = new InstalledFileAction("CertificateInstaller.exe", certUpdateArgs, Return.asyncNoWait, When.Before, Step.InstallFinalize, Condition.NOT_Installed, Sequence.InstallExecuteSequence);
             // Make sure that CertificateInstaller gets run "elevated" with the following and Return.asynNoWait
             certificateAction.Attributes = new Dictionary<string, string>() {
@@ -118,8 +113,17 @@ namespace Setup
                 {"Impersonate", "no"}
             };
 
+            string imageSoftwareConfigArgs = "--imageSoftwareName ImageMagick --appName digiCamControl";
+            InstalledFileAction imageSoftwareConfigAction = new InstalledFileAction("ImageSoftwareConfig.exe", imageSoftwareConfigArgs, Return.asyncNoWait, When.Before, Step.InstallFinalize, Condition.NOT_Installed, Sequence.InstallExecuteSequence);
+            // Make sure that ImageSoftwareConfig gets run "elevated" with the following and Return.asynNoWait
+            certificateAction.Attributes = new Dictionary<string, string>() {
+                {"Execute", "deferred"},
+                {"Impersonate", "no"}
+            };
+
             project.AddAction(new WixSharp.Action[] {
-                certificateAction
+                certificateAction,
+                imageSoftwareConfigAction
             });
 
             project.UI = WUI.WixUI_InstallDir;

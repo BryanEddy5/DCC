@@ -9,6 +9,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CameraControl", "CameraCont
 		{F809DBB6-E0E8-47A8-92ED-C24575576A5D} = {F809DBB6-E0E8-47A8-92ED-C24575576A5D}
 		{E8F26BBC-4795-47B3-B89B-2296862A976C} = {E8F26BBC-4795-47B3-B89B-2296862A976C}
 		{188147CA-5300-4D1B-881A-8E766BA4FF1E} = {188147CA-5300-4D1B-881A-8E766BA4FF1E}
+		{8A0158FF-EA68-4A10-9E65-CEA72319C189} = {8A0158FF-EA68-4A10-9E65-CEA72319C189}
 	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PortableDeviceLib", "PortableDeviceLib\PortableDeviceLib.csproj", "{E9F048C1-C6A0-4CCD-BE57-4E76A7F8B32D}"
@@ -59,6 +60,8 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CameraControlRemoteCmd", "CameraControlRemoteCmd\CameraControlRemoteCmd.csproj", "{3F9A3D8C-6325-4317-B7C3-4F04EF554C9E}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CertificateInstaller", "CertificateInstaller\CertificateInstaller.csproj", "{DD8C4F8B-8F87-4620-AD22-B470C17CE105}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ImageSoftwareConfig", "ImageSoftwareConfig\ImageSoftwareConfig.csproj", "{8A0158FF-EA68-4A10-9E65-CEA72319C189}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -346,6 +349,18 @@ Global
 		{DD8C4F8B-8F87-4620-AD22-B470C17CE105}.Release|Mixed Platforms.Build.0 = Release|Any CPU
 		{DD8C4F8B-8F87-4620-AD22-B470C17CE105}.Release|x64.ActiveCfg = Release|Any CPU
 		{DD8C4F8B-8F87-4620-AD22-B470C17CE105}.Release|x86.ActiveCfg = Release|Any CPU
+		{8A0158FF-EA68-4A10-9E65-CEA72319C189}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8A0158FF-EA68-4A10-9E65-CEA72319C189}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8A0158FF-EA68-4A10-9E65-CEA72319C189}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
+		{8A0158FF-EA68-4A10-9E65-CEA72319C189}.Debug|Mixed Platforms.Build.0 = Debug|Any CPU
+		{8A0158FF-EA68-4A10-9E65-CEA72319C189}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{8A0158FF-EA68-4A10-9E65-CEA72319C189}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{8A0158FF-EA68-4A10-9E65-CEA72319C189}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8A0158FF-EA68-4A10-9E65-CEA72319C189}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8A0158FF-EA68-4A10-9E65-CEA72319C189}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
+		{8A0158FF-EA68-4A10-9E65-CEA72319C189}.Release|Mixed Platforms.Build.0 = Release|Any CPU
+		{8A0158FF-EA68-4A10-9E65-CEA72319C189}.Release|x64.ActiveCfg = Release|Any CPU
+		{8A0158FF-EA68-4A10-9E65-CEA72319C189}.Release|x86.ActiveCfg = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
