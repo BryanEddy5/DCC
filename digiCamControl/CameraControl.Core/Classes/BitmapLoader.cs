@@ -186,29 +186,48 @@ namespace CameraControl.Core.Classes
             try
             {
                 var watch = System.Diagnostics.Stopwatch.StartNew();
-                using (MagickImage image = new MagickImage(filename))
+                //using (MagickImage image = new MagickImage(filename))
                 {
-                    fileItem.FileInfo.SetSize(image.Width, image.Height);                       
+                    using (FileStream fs = new FileStream(filename, FileMode.Open, FileAccess.Read))
+                    {
+                        using (System.Drawing.Image image = System.Drawing.Image.FromStream(fs))
+                        {
+                            fileItem.FileInfo.SetSize(image.Width, image.Height);
 
-                    double dw = (double)LargeThumbSize / image.Width;
-                    image.FilterType = FilterType.Box;
-                    image.Thumbnail((int)(image.Width * dw), (int)(image.Height * dw));
-                    image.Unsharpmask(1, 1, 0.5, 0.1);
-                    PhotoUtils.CreateFolder(fileItem.LargeThumb);
-                    image.Write(fileItem.LargeThumb);
-                    fileItem.IsLoaded = true;
-                    fileItem.Loading = false;
+                            PhotoUtils.CreateFolder(fileItem.LargeThumb);
+                            double dw = (double)LargeThumbSize / image.Width;
+                            //image.FilterType = FilterType.Box;
+                            //image.Thumbnail((int)(image.Width * dw), (int)(image.Height * dw));
+                            //image.Unsharpmask(1, 1, 0.5, 0.1);
+                            //image.Write(fileItem.LargeThumb);
+                            System.Drawing.Size largeSize = new System.Drawing.Size((int)(image.Width * dw), (int)(image.Height * dw));
+                            using (System.Drawing.Image largeThumb = PhotoUtils.resizeImage(image, largeSize))
+                            {
+                                largeThumb.Save(fileItem.LargeThumb);
+                            }
+                            PhotoUtils.WaitForFile(fileItem.LargeThumb);
 
-                    dw = (double)SmallThumbSize / image.Width;
-                    image.Thumbnail((int)(image.Width * dw), (int)(image.Height * dw));
-                    image.Unsharpmask(1, 1, 0.5, 0.1);
-                    PhotoUtils.CreateFolder(fileItem.SmallThumb);
-                    image.Write(fileItem.SmallThumb);
-                    
-                    fileItem.Thumbnail = LoadImage(fileItem.SmallThumb);
+                            PhotoUtils.CreateFolder(fileItem.SmallThumb);
+                            dw = (double)SmallThumbSize / image.Width;
+                            //image.Thumbnail((int)(image.Width * dw), (int)(image.Height * dw));
+                            //image.Unsharpmask(1, 1, 0.5, 0.1);
+                            //image.Write(fileItem.SmallThumb);
+                            System.Drawing.Size smallSize = new System.Drawing.Size((int)(image.Width * dw), (int)(image.Height * dw));
+                            using (System.Drawing.Image smallThumb = PhotoUtils.resizeImage(image, smallSize))
+                            {
+                                smallThumb.Save(fileItem.SmallThumb);
+                            }
+                            PhotoUtils.WaitForFile(fileItem.SmallThumb);
+
+                            fileItem.IsLoaded = true;
+                            fileItem.Loading = false;
+
+                            fileItem.Thumbnail = LoadImage(fileItem.SmallThumb);
+                        }
+                    }
                 }
                 watch.Stop();
-                Log.Debug("ms for BitmapLoader.GetMetaData " + watch.ElapsedMilliseconds);
+                Log.Debug("ms for BitmapLoader.GenerateCache " + watch.ElapsedMilliseconds);
 
                 fileItem.SaveInfo();
                 SetImageInfo(fileItem);

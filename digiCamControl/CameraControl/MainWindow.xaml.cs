@@ -63,6 +63,9 @@ using Path = System.IO.Path;
 using Timer = System.Timers.Timer;
 
 using ImageMagick;
+using System.Drawing;
+using System.Drawing.Imaging;
+using System.Drawing.Drawing2D;
 
 #endregion
 
@@ -438,7 +441,8 @@ namespace CameraControl
                 {
                     string subjectEmployeeId = CapturedHelper.getSubjectEmployeeId() ?? "";
                     string id = CapturedHelper.getId() ?? "";
-                    string baseName = String.Format("{0}_{1}.jpg", subjectEmployeeId, id);
+                    //string baseName = String.Format("{0}_{1}.jpg", subjectEmployeeId, id);
+                    string baseName = String.Format("{0}_[Counter 4 digit]_{1}.jpg", subjectEmployeeId, id);
 
                     fileName = session.GetNextFileName(baseName, eventArgs.CameraDevice);
                 }
@@ -505,26 +509,31 @@ namespace CameraControl
                 }
 
                 var watch = System.Diagnostics.Stopwatch.StartNew();
-                MagickImage image = CopyRotateThumbImage(tempFile, quickThumb);
-
-                CapturedHelper.setPreviewFilename(quickThumb);
-                CapturedHelper.setImageFilename(fileName);
-                CapturedHelper.SignalPreviewReady();
-                StaticHelper.Instance.SystemMessage = "Preview Ready for upload";
-
-                RotateSaveImage(image, fileName);
-
-                ExifProfile profile = image.GetExifProfile();
-                ExifValue exifValue = profile.GetValue(ExifTag.Orientation);
-                OrientationType orientation = (OrientationType) Enum.ToObject(typeof(OrientationType), exifValue.Value);
-                CapturedHelper.setPhotoOrientation(orientation);
-
-                CapturedHelper.SignalPhotoReady();
-
+                CreatePreviewAndImageFiles(tempFile, quickThumb, fileName);
                 watch.Stop();
-                Log.Debug("ms for CopyRotateThumbImage and RotateSaveImage " + watch.ElapsedMilliseconds);
+                Log.Debug("ms for CreatePreviewAndImageFiles " + watch.ElapsedMilliseconds);
 
-                StaticHelper.Instance.SystemMessage = "Photo Ready for upload";
+                //watch = System.Diagnostics.Stopwatch.StartNew();
+                //MagickImage image = CopyRotateThumbImage(tempFile, quickThumb);
+
+                //CapturedHelper.setPreviewFilename(quickThumb);
+                //CapturedHelper.SignalPreviewReady();
+                //StaticHelper.Instance.SystemMessage = "Preview Ready for upload";
+
+                //RotateSaveImage(image, fileName);
+
+                /////ExifProfile profile = image.GetExifProfile();
+                /////ExifValue exifValue = profile.GetValue(ExifTag.Orientation);
+                /////OrientationType orientation = (OrientationType) Enum.ToObject(typeof(OrientationType), exifValue.Value);
+                //OrientationType orientation = OrientationType.TopLeft;
+                //CapturedHelper.setPhotoOrientation(orientation);
+                //CapturedHelper.setImageFilename(fileName);
+                //CapturedHelper.SignalPhotoReady();
+
+                //watch.Stop();
+                //Log.Debug("ms for CopyRotateThumbImage and RotateSaveImage " + watch.ElapsedMilliseconds);
+
+                //StaticHelper.Instance.SystemMessage = "Photo Ready for upload";
 
                 string backupfile = null;
                 if (session.BackUp)
@@ -671,7 +680,216 @@ namespace CameraControl
                 image.Format = MagickFormat.Jpeg;
                 // Save the result
                 image.Write(fileName);
+                PhotoUtils.WaitForFile(fileName);
             }
+        }
+
+        private void CreatePreviewAndImageFiles(string jpegFilename, string thumbFilename, string imageFilename) {
+
+            // Might need this if there is a memory leak:
+            // http://stackoverflow.com/questions/1108607/out-of-memory-exception-on-system-drawing-image-fromfile
+            // using (FileStream fs = new FileStream(filePath, FileMode.Open, FileAccess.Read))
+            // {
+            //   using (Image original = Image.FromStream(fs))
+            //   { ...
+
+            var watch = System.Diagnostics.Stopwatch.StartNew();
+
+            OrientationType orientation = OrientationType.Undefined;
+            using (Image image = Image.FromFile(jpegFilename))
+            {
+                int exifOrientationValue = getExifOrientationValue(image);
+                orientation = (OrientationType)Enum.ToObject(typeof(OrientationType), exifOrientationValue);
+                // Hardcode this value for now since the server incorrectly expects this
+                orientation = OrientationType.TopLeft;
+                RotateFlipType rotateFlip = getOrientationRotateFlipType(exifOrientationValue);
+
+                // use image.Height if our image is rotated, otherwise image.Width
+                double dw = (double)BitmapLoader.SmallThumbSize / image.Height;
+                System.Drawing.Size size = new System.Drawing.Size((int)(image.Width * dw), (int)(image.Height * dw));
+                using (Image smallThumb = PhotoUtils.resizeImage(image, size))
+                {
+                    smallThumb.RotateFlip(rotateFlip);
+
+                    // 72 dpi, bit depth 24, OK quality and about 40Kb on average
+                    // ImageFormat targetFormat = ImageFormat.Jpeg;
+                    // smallThumb.Save(thumbFilename, ImageFormat.Jpeg);
+                    // 96 dpi, bit depth 32, good quality, and about 400Kb on average
+                    PhotoUtils.CreateFolder(thumbFilename);
+                    smallThumb.Save(thumbFilename);
+                }
+                PhotoUtils.WaitForFile(thumbFilename);
+
+                watch.Stop();
+                Log.Debug("ms for getting through preview thumb generation " + watch.ElapsedMilliseconds);
+
+                CapturedHelper.setPreviewFilename(thumbFilename);
+                CapturedHelper.SignalPreviewReady();
+                StaticHelper.Instance.SystemMessage = "Preview Ready for upload";
+
+                ImageFormat sourceFormat = image.RawFormat;
+                EncoderParameters encoderParams = null;
+                try
+                {
+                    // Results in 4x file size!:
+                    //image.RotateFlip(RotateFlipType.Rotate270FlipNone);
+
+                    // The following rotates a JPEG losslessly for dimensions of multiples of 8 and rotations of multiples of 90 degress
+                    if (sourceFormat.Guid == ImageFormat.Jpeg.Guid)
+                    {
+                        //encoderParams = new EncoderParameters(1);
+                        //encoderParams.Param[0] = new EncoderParameter(Encoder.Transformation,
+                        //    (long)EncoderValue.TransformRotate270);
+
+                        encoderParams = getEncoderParameters(exifOrientationValue);
+
+                        //encoderParams = new EncoderParameters(2);
+                        //encoderParams.Param[0] = new EncoderParameter(Encoder.Transformation,
+                        //    (long)EncoderValue.TransformRotate270);
+                        //encoderParams.Param[1] = new EncoderParameter(Encoder.Quality, 98L);
+                    }
+                    PhotoUtils.CreateFolder(imageFilename);
+                    image.Save(imageFilename, GetEncoder(sourceFormat), encoderParams);
+                    PhotoUtils.WaitForFile(imageFilename);
+                }
+                finally
+                {
+                    if (encoderParams != null)
+                        encoderParams.Dispose();
+                }
+            }
+
+            CapturedHelper.setPhotoOrientation(orientation);
+            CapturedHelper.setImageFilename(imageFilename);
+            CapturedHelper.SignalPhotoReady();
+
+            StaticHelper.Instance.SystemMessage = "Photo Ready for upload";
+        }
+
+        private int getExifOrientationValue(Image image)
+        {
+            int exifOrientationValue = 1; // default of no rotation or flip required
+
+            int orientationTagId = 0x112;
+            if (Array.IndexOf(image.PropertyIdList, orientationTagId) >= 0)
+            {
+                exifOrientationValue = (int)image.GetPropertyItem(orientationTagId).Value[0];
+            }
+
+            // if needed elsewhere when changed
+            // image.RemovePropertyItem(orientationTagId);
+
+            return exifOrientationValue;
+        }
+
+        private RotateFlipType getOrientationRotateFlipType(int exifOrientationValue)
+        {
+            RotateFlipType rotateFlip;
+            switch (exifOrientationValue)
+            {
+                case 1:
+                    rotateFlip = RotateFlipType.RotateNoneFlipNone; // No rotation or flip required.
+                    break;
+                case 2:
+                    rotateFlip = RotateFlipType.RotateNoneFlipX;
+                    break;
+                case 3:
+                    rotateFlip = RotateFlipType.Rotate180FlipNone;
+                    break;
+                case 4:
+                    rotateFlip = RotateFlipType.Rotate180FlipX;
+                    break;
+                case 5:
+                    rotateFlip = RotateFlipType.Rotate90FlipX;
+                    break;
+                case 6:
+                    rotateFlip = RotateFlipType.Rotate90FlipNone;
+                    break;
+                case 7:
+                    rotateFlip = RotateFlipType.Rotate270FlipX;
+                    break;
+                case 8:
+                    rotateFlip = RotateFlipType.Rotate270FlipNone;
+                    break;
+                default:
+                    rotateFlip = RotateFlipType.RotateNoneFlipNone;  // default
+                    break;
+            }
+
+            return rotateFlip;
+        }
+
+        private EncoderParameters getEncoderParameters(int exifOrientationValue)
+        {
+            EncoderParameters encoderParameters;
+            switch (exifOrientationValue)
+            {
+                case 1:
+                    // No transformation required.
+                    encoderParameters = new EncoderParameters(0);
+                    break;
+                case 2:
+                    // RotateFlipType.RotateNoneFlipX;
+                    encoderParameters = new EncoderParameters(1);
+                    encoderParameters.Param[0] = new EncoderParameter(Encoder.Transformation,
+                            (long)EncoderValue.TransformFlipHorizontal);
+                    break;
+                case 3:
+                    // RotateFlipType.Rotate180FlipNone;
+                    encoderParameters = new EncoderParameters(1);
+                    encoderParameters.Param[0] = new EncoderParameter(Encoder.Transformation,
+                            (long)EncoderValue.TransformRotate180);
+                    break;
+                case 4:
+                    // RotateFlipType.Rotate180FlipX;
+                    encoderParameters = new EncoderParameters(2);
+                    encoderParameters.Param[0] = new EncoderParameter(Encoder.Transformation,
+                            (long)EncoderValue.TransformRotate180);
+                    encoderParameters.Param[1] = new EncoderParameter(Encoder.Transformation,
+                            (long)EncoderValue.TransformFlipHorizontal);
+                    break;
+                case 5:
+                    // RotateFlipType.Rotate90FlipX;
+                    encoderParameters = new EncoderParameters(2);
+                    encoderParameters.Param[0] = new EncoderParameter(Encoder.Transformation,
+                            (long)EncoderValue.TransformRotate90);
+                    encoderParameters.Param[1] = new EncoderParameter(Encoder.Transformation,
+                            (long)EncoderValue.TransformFlipHorizontal);
+                    break;
+                case 6:
+                    // RotateFlipType.Rotate90FlipNone;
+                    encoderParameters = new EncoderParameters(1);
+                    encoderParameters.Param[0] = new EncoderParameter(Encoder.Transformation,
+                            (long)EncoderValue.TransformRotate90);
+                    break;
+                case 7:
+                    // RotateFlipType.Rotate270FlipX;
+                    encoderParameters = new EncoderParameters(2);
+                    encoderParameters.Param[0] = new EncoderParameter(Encoder.Transformation,
+                            (long)EncoderValue.TransformRotate270);
+                    encoderParameters.Param[1] = new EncoderParameter(Encoder.Transformation,
+                            (long)EncoderValue.TransformFlipHorizontal);
+                    break;
+                case 8:
+                    // RotateFlipType.Rotate270FlipNone;
+                    encoderParameters = new EncoderParameters(1);
+                    encoderParameters.Param[0] = new EncoderParameter(Encoder.Transformation,
+                            (long)EncoderValue.TransformRotate270);
+                    break;
+                default:
+                    encoderParameters = new EncoderParameters(0);  // default - not a valid value
+                    break;
+            }
+
+            return encoderParameters;
+        }
+
+        private ImageCodecInfo GetEncoder(ImageFormat format)
+        {
+            foreach (var info in ImageCodecInfo.GetImageEncoders())
+                if (info.FormatID == format.Guid)
+                    return info;
+            return null;
         }
 
         private MagickImage CopyRotateThumbImage(string source, string quickThumbPath)
@@ -687,7 +905,8 @@ namespace CameraControl
                 image = new MagickImage(source);
                 MagickImage imageThumb = image.Clone();
 
-                double dw = (double)BitmapLoader.SmallThumbSize / imageThumb.Width;
+                // was imageThumb.Width - assume we're going from landscape to portrait dimensions - cth
+                double dw = (double)BitmapLoader.SmallThumbSize / imageThumb.Height;
                 imageThumb.Thumbnail((int)(imageThumb.Width * dw), (int)(imageThumb.Height * dw));
                 imageThumb.Unsharpmask(1, 1, 0.5, 0.1);
 
@@ -695,6 +914,7 @@ namespace CameraControl
 
                 int qualityPreview = imageThumb.Quality;
                 imageThumb.Write(quickThumbPath);
+                PhotoUtils.WaitForFile(quickThumbPath);
 
                 watch0.Stop();
                 Log.Debug("ms for new preview generation " + watch0.ElapsedMilliseconds);
@@ -721,6 +941,7 @@ namespace CameraControl
 
             // Save the result
             image.Write(rotated);
+            PhotoUtils.WaitForFile(rotated);
 
             watch.Stop();
             Log.Debug("ms for RotateSaveImage " + watch.ElapsedMilliseconds);
@@ -736,8 +957,9 @@ namespace CameraControl
                     double dw = (double)BitmapLoader.SmallThumbSize / image.Width;
                     image.Thumbnail((int)(image.Width * dw), (int)(image.Height * dw));
                     image.Unsharpmask(1, 1, 0.5, 0.1);
-                    // PhotoUtils.CreateFolder(fileItem.SmallThumb);
+                    // PhotoUtils.CreateFolder(fileItem.quickThumb);
                     image.Write(quickThumb);
+                    PhotoUtils.WaitForFile(quickThumb);
                }
             }
             catch (Exception exception)

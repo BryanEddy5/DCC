@@ -241,11 +241,11 @@ namespace CameraControl.Core.Classes
                         {
                             CapturedHelper.WaitPreviewReady(id);
 
+                            var fileName = CapturedHelper.getImageFilename(id);
+
                             // Remove any previous image
                             ServiceProvider.WindowsManager.ExecuteCommand(WindowsCmdConsts.Del_Image, true);
                             Log.Debug("Called ExecuteCommand with WindowsCmdConsts.Del_Image");
-
-                            var fileName = CapturedHelper.getImageFilename(id);
 
                             CaptureResponse captureResponse = new CaptureResponse(response, fileName, id);
                             var s = ResponseUtils.jsonpResponse(jsoncallback, JsonConvert.SerializeObject(captureResponse));

@@ -114,17 +114,18 @@ namespace Setup
                 {"Impersonate", "no"}
             };
 
-            string imageSoftwareConfigArgs = "--imageSoftwareName ImageMagick --appName digiCamControl";
-            InstalledFileAction imageSoftwareConfigAction = new InstalledFileAction("ImageSoftwareConfig.exe", imageSoftwareConfigArgs, Return.asyncNoWait, When.Before, Step.InstallFinalize, Condition.NOT_Installed, Sequence.InstallExecuteSequence);
-            // Make sure that ImageSoftwareConfig gets run "elevated" with the following and Return.asynNoWait
-            certificateAction.Attributes = new Dictionary<string, string>() {
-                {"Execute", "deferred"},
-                {"Impersonate", "no"}
-            };
+            // Switching away from ImageMagick
+            //string imageSoftwareConfigArgs = "--imageSoftwareName ImageMagick --appName digiCamControl";
+            //InstalledFileAction imageSoftwareConfigAction = new InstalledFileAction("ImageSoftwareConfig.exe", imageSoftwareConfigArgs, Return.asyncNoWait, When.Before, Step.InstallFinalize, Condition.NOT_Installed, Sequence.InstallExecuteSequence);
+            //// Make sure that ImageSoftwareConfig gets run "elevated" with the following and Return.asynNoWait
+            //certificateAction.Attributes = new Dictionary<string, string>() {
+            //    {"Execute", "deferred"},
+            //    {"Impersonate", "no"}
+            //};
 
             project.AddAction(new WixSharp.Action[] {
-                certificateAction,
-                imageSoftwareConfigAction
+                certificateAction
+                //imageSoftwareConfigAction
             });
 
             project.UI = WUI.WixUI_InstallDir;

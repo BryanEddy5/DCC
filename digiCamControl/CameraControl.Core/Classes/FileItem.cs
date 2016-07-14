@@ -129,7 +129,9 @@ namespace CameraControl.Core.Classes
         private string _fileName;
         public string FileName
         {
-            get { return _fileName; }
+            get {
+                return _fileName;
+            }
             set
             {
                 _fileName = value;
@@ -262,7 +264,9 @@ namespace CameraControl.Core.Classes
         [XmlAttribute]
         public bool IsChecked
         {
-            get { return _isChecked; }
+            get {
+                return _isChecked;
+            }
             set
             {
                 _isChecked = value;
@@ -497,7 +501,7 @@ namespace CameraControl.Core.Classes
                 string name = Path.GetFileName(filename);
                 if (!String.IsNullOrEmpty(name))
                 {
-                    name = name.Replace(".jpg", "_preview.jpg");
+                    name = "preview_" + name;
                     string folder = Path.GetDirectoryName(filename);
                     previewName = Path.Combine(folder, "Previews", name);
                 }

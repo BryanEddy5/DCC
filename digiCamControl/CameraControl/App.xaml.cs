@@ -153,7 +153,8 @@ namespace CameraControl
                     _startUpWindow.Close();
 
                 ShowStartupWebPage(ServiceProvider.Settings);
-                PrepImageLibrary();
+                // Completely remove this after we're sure ImageMagick is no longer needed - cth
+                // PrepImageLibrary();
             }));
             ServiceProvider.Database.Add(new DbEvents(EventType.AppStart));
         }

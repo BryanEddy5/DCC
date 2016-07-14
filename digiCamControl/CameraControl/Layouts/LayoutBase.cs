@@ -150,7 +150,13 @@ namespace CameraControl.Layouts
                 if (ServiceProvider.Settings.SelectedBitmap != null &&
                     ServiceProvider.Settings.SelectedBitmap.FileItem != null &&
                     filestodelete.Count == 0)
-                    filestodelete.Add(ServiceProvider.Settings.SelectedBitmap.FileItem);
+                {
+                    // with bypassConfirmation, we only want to delete explicitly marked (IsChecked) images - cth
+                    if (!bypassConfirmation)
+                    {
+                        filestodelete.Add(ServiceProvider.Settings.SelectedBitmap.FileItem);
+                    }
+                }
 
                 if (filestodelete.Count == 0)
                     return;
