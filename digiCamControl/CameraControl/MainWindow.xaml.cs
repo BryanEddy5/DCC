@@ -684,7 +684,8 @@ namespace CameraControl
             }
         }
 
-        private void CreatePreviewAndImageFiles(string jpegFilename, string thumbFilename, string imageFilename) {
+        private void CreatePreviewAndImageFiles(string jpegFilename, string thumbFilename, string imageFilename)
+        {
 
             // Might need this if there is a memory leak:
             // http://stackoverflow.com/questions/1108607/out-of-memory-exception-on-system-drawing-image-fromfile
@@ -696,66 +697,70 @@ namespace CameraControl
             var watch = System.Diagnostics.Stopwatch.StartNew();
 
             OrientationType orientation = OrientationType.Undefined;
-            using (Image image = Image.FromFile(jpegFilename))
+            using (FileStream fs = new FileStream(jpegFilename, FileMode.Open, FileAccess.Read))
             {
-                int exifOrientationValue = getExifOrientationValue(image);
-                orientation = (OrientationType)Enum.ToObject(typeof(OrientationType), exifOrientationValue);
-                // Hardcode this value for now since the server incorrectly expects this
-                orientation = OrientationType.TopLeft;
-                RotateFlipType rotateFlip = getOrientationRotateFlipType(exifOrientationValue);
-
-                // use image.Height if our image is rotated, otherwise image.Width
-                double dw = (double)BitmapLoader.SmallThumbSize / image.Height;
-                System.Drawing.Size size = new System.Drawing.Size((int)(image.Width * dw), (int)(image.Height * dw));
-                using (Image smallThumb = PhotoUtils.resizeImage(image, size))
+                //using (Image image = Image.FromFile(jpegFilename))
+                using (Image image = Image.FromStream(fs))
                 {
-                    smallThumb.RotateFlip(rotateFlip);
+                    int exifOrientationValue = getExifOrientationValue(image);
+                    orientation = (OrientationType)Enum.ToObject(typeof(OrientationType), exifOrientationValue);
+                    // Hardcode this value for now since the server incorrectly expects this
+                    orientation = OrientationType.TopLeft;
+                    RotateFlipType rotateFlip = getOrientationRotateFlipType(exifOrientationValue);
 
-                    // 72 dpi, bit depth 24, OK quality and about 40Kb on average
-                    // ImageFormat targetFormat = ImageFormat.Jpeg;
-                    // smallThumb.Save(thumbFilename, ImageFormat.Jpeg);
-                    // 96 dpi, bit depth 32, good quality, and about 400Kb on average
-                    PhotoUtils.CreateFolder(thumbFilename);
-                    smallThumb.Save(thumbFilename);
-                }
-                PhotoUtils.WaitForFile(thumbFilename);
-
-                watch.Stop();
-                Log.Debug("ms for getting through preview thumb generation " + watch.ElapsedMilliseconds);
-
-                CapturedHelper.setPreviewFilename(thumbFilename);
-                CapturedHelper.SignalPreviewReady();
-                StaticHelper.Instance.SystemMessage = "Preview Ready for upload";
-
-                ImageFormat sourceFormat = image.RawFormat;
-                EncoderParameters encoderParams = null;
-                try
-                {
-                    // Results in 4x file size!:
-                    //image.RotateFlip(RotateFlipType.Rotate270FlipNone);
-
-                    // The following rotates a JPEG losslessly for dimensions of multiples of 8 and rotations of multiples of 90 degress
-                    if (sourceFormat.Guid == ImageFormat.Jpeg.Guid)
+                    // use image.Height if our image is rotated, otherwise image.Width
+                    double dw = (double)BitmapLoader.SmallThumbSize / image.Height;
+                    System.Drawing.Size size = new System.Drawing.Size((int)(image.Width * dw), (int)(image.Height * dw));
+                    using (Image smallThumb = PhotoUtils.resizeImage(image, size))
                     {
-                        //encoderParams = new EncoderParameters(1);
-                        //encoderParams.Param[0] = new EncoderParameter(Encoder.Transformation,
-                        //    (long)EncoderValue.TransformRotate270);
+                        smallThumb.RotateFlip(rotateFlip);
 
-                        encoderParams = getEncoderParameters(exifOrientationValue);
-
-                        //encoderParams = new EncoderParameters(2);
-                        //encoderParams.Param[0] = new EncoderParameter(Encoder.Transformation,
-                        //    (long)EncoderValue.TransformRotate270);
-                        //encoderParams.Param[1] = new EncoderParameter(Encoder.Quality, 98L);
+                        // 72 dpi, bit depth 24, OK quality and about 40Kb on average
+                        // ImageFormat targetFormat = ImageFormat.Jpeg;
+                        // smallThumb.Save(thumbFilename, ImageFormat.Jpeg);
+                        // 96 dpi, bit depth 32, good quality, and about 400Kb on average
+                        PhotoUtils.CreateFolder(thumbFilename);
+                        smallThumb.Save(thumbFilename);
                     }
-                    PhotoUtils.CreateFolder(imageFilename);
-                    image.Save(imageFilename, GetEncoder(sourceFormat), encoderParams);
-                    PhotoUtils.WaitForFile(imageFilename);
-                }
-                finally
-                {
-                    if (encoderParams != null)
-                        encoderParams.Dispose();
+                    PhotoUtils.WaitForFile(thumbFilename);
+
+                    watch.Stop();
+                    Log.Debug("ms for getting through preview thumb generation " + watch.ElapsedMilliseconds);
+
+                    CapturedHelper.setPreviewFilename(thumbFilename);
+                    CapturedHelper.SignalPreviewReady();
+                    StaticHelper.Instance.SystemMessage = "Preview Ready for upload";
+
+                    ImageFormat sourceFormat = image.RawFormat;
+                    EncoderParameters encoderParams = null;
+                    try
+                    {
+                        // Results in 4x file size!:
+                        //image.RotateFlip(RotateFlipType.Rotate270FlipNone);
+
+                        // The following rotates a JPEG losslessly for dimensions of multiples of 8 and rotations of multiples of 90 degress
+                        if (sourceFormat.Guid == ImageFormat.Jpeg.Guid)
+                        {
+                            //encoderParams = new EncoderParameters(1);
+                            //encoderParams.Param[0] = new EncoderParameter(Encoder.Transformation,
+                            //    (long)EncoderValue.TransformRotate270);
+
+                            encoderParams = getEncoderParameters(exifOrientationValue);
+
+                            //encoderParams = new EncoderParameters(2);
+                            //encoderParams.Param[0] = new EncoderParameter(Encoder.Transformation,
+                            //    (long)EncoderValue.TransformRotate270);
+                            //encoderParams.Param[1] = new EncoderParameter(Encoder.Quality, 98L);
+                        }
+                        PhotoUtils.CreateFolder(imageFilename);
+                        image.Save(imageFilename, GetEncoder(sourceFormat), encoderParams);
+                        PhotoUtils.WaitForFile(imageFilename);
+                    }
+                    finally
+                    {
+                        if (encoderParams != null)
+                            encoderParams.Dispose();
+                    }
                 }
             }
 
