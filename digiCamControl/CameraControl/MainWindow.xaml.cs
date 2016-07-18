@@ -704,8 +704,11 @@ namespace CameraControl
                 {
                     int exifOrientationValue = getExifOrientationValue(image);
                     orientation = (OrientationType)Enum.ToObject(typeof(OrientationType), exifOrientationValue);
-                    // Hardcode this value for now since the server incorrectly expects this
+
+                    // Reflect in the exif data that we are rotating below (may not need to rotate in the future)
                     orientation = OrientationType.TopLeft;
+                    setExifOrientationValue(image, (int)orientation); // normal
+
                     RotateFlipType rotateFlip = getOrientationRotateFlipType(exifOrientationValue);
 
                     // use image.Height if our image is rotated, otherwise image.Width
@@ -785,6 +788,17 @@ namespace CameraControl
             // image.RemovePropertyItem(orientationTagId);
 
             return exifOrientationValue;
+        }
+
+        private void setExifOrientationValue(Image image, int exifOrientationValue)
+        {
+            int orientationTagId = 0x112;
+            if (Array.IndexOf(image.PropertyIdList, orientationTagId) >= 0)
+            {
+                PropertyItem propItem = image.GetPropertyItem(orientationTagId);
+                propItem.Value[0] = (byte)exifOrientationValue;
+                image.SetPropertyItem(propItem);
+            }
         }
 
         private RotateFlipType getOrientationRotateFlipType(int exifOrientationValue)
