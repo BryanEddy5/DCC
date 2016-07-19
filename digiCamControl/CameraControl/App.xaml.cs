@@ -168,7 +168,10 @@ namespace CameraControl
             string target = String.Format("https://localhost:{0}/", settings.WebserverPort);
             try
             {
-                System.Diagnostics.Process.Start(target);
+                // For the user's default browser:
+                // System.Diagnostics.Process.Start(target);
+                // For Firefox in particular:
+                System.Diagnostics.Process.Start("firefox.exe", target);
             }
             catch (System.ComponentModel.Win32Exception noBrowser)
             {
