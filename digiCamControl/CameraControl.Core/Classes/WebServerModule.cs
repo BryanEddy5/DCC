@@ -303,19 +303,34 @@ namespace CameraControl.Core.Classes
                     }
                     else if ("liveview".Equals(operation))
                     {
+                        string responseMessage = "OK";
                         var command = queryString["command"];
-                        if ("show".Equals(command))
+                        try
                         {
-                            StartLiveViewIfNeeded(true);
+                            if ("show".Equals(command))
+                            {
+                                StartLiveViewIfNeeded(true);
+                            }
+                            else if ("hide".Equals(command))
+                            {
+                                StopLiveViewIfNeeded(true);
+                            }
+                            else
+                            {
+                                responseMessage = string.Format("Error duing JSONP operation {0}: unknown command: {1}", operation, command);
+                                Log.Error(responseMessage);
+                            }
                         }
-                        else if ("hide".Equals(command))
+                        catch (Exception e)
                         {
-                            StopLiveViewIfNeeded(true);
+                            responseMessage = string.Format("Exception during JSONP operation {0}: {1}", operation, e);
+                            Log.Error(responseMessage);
                         }
-                        else
-                        {
-                            Log.Error("JSONP operation: " + operation + ", with unknown command: " + command);
-                        }
+
+                        StatusMessage statusMessage = ResponseUtils.createStatusMessage(responseMessage);
+                        var s = ResponseUtils.jsonpResponse(jsoncallback, JsonConvert.SerializeObject(statusMessage));
+
+                        SendData(context, Encoding.UTF8.GetBytes(s));
                     }
                     else
                     {
