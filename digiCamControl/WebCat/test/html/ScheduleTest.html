@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <!-- <meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"> -->
+    
+    <script type="text/javascript" src="https://internal-cdn.amazon.com/btk.amazon.com/ajax/libs/jquery/2.1.4/jquery-2.1.4.js"></script>
+
+    <script type="text/javascript">
+      function testSchedule() {
+      console.log("testSchedule");
+      test3("a", "b", "c");
+      window.setTimeout(test3, 2000, "d", "e", "f");
+      //schedule(test3("g", "h", "i"));
+      //myfn(test3("d", "e", "f"));
+      // myFunc(eat, ["pickles", "peanut butter"]); 
+      schedule(eat, "pickles", "peanut butter"); 
+      }
+
+      function schedule(fnCall) {
+        console.log("the fnCall is ", fnCall);
+      }
+
+      function test3(x, y, z) {
+        console.log("we have ", [x, y, z]);
+      }
+
+      function myfn(fn) {
+        call(fn);
+      }
+
+      function eat(food1, food2)
+      {
+      console.log("I like to eat " + food1 + " and " + food2 );
+      }
+      function myFunc(callback, args)
+      {
+      args2 = [callback, 2000].concat(args);
+      window.setTimeout.apply(this, args2);
+      }
+      function schedule()
+      {
+      var argsArray = Array.from(arguments);
+      var callback = argsArray[0];
+      argsArray.shift();
+      var applyArgs = [callback, 0].concat(argsArray);
+      window.setTimeout.apply(this, applyArgs);
+      }
+
+      //alerts "I like to eat pickles and peanut butter"
+      //myFunc(eat, ["pickles", "peanut butter"]); 
+
+    $(document).ready(function(){
+      testSchedule();
+    });
+    </script>
+
+    <title>Schedule Test</title>
+
+  </head>
+  <body>
+    <div class="container-fluid">
+
+      <div>
+        <h1>Schedule Test</h1>
+      </div>
+    </div>
+  </body>
+</html>

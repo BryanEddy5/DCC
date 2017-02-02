@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset=utf-8>
+
+    <link type="text/css" rel="stylesheet" href="//internal-cdn.amazon.com/oneg.amazon.com/assets/3.2.5/css/application.min.css" />
+    <script type="text/javascript" src="https://internal-cdn.amazon.com/btk.amazon.com/ajax/libs/jquery/2.1.4/jquery-2.1.4.js"></script>
+
+    <title>HTML5 Demo: Drag and drop, automatic upload</title>
+    <!-- <link rel="stylesheet" href="css/html5demos.css"> -->
+    <style>
+      #holder {
+          border: 4px dashed #ccc;
+          width: 400px;
+          min-height: 200px;
+          margin: 20px auto;
+          background-color: #f3f3f3;
+      }
+      #holder.hover {
+          border: 4px dashed #0c0;
+          outline-color: #c8dadf;
+          background-color: #fff;
+      }
+      progress { width: 100%; }
+      progress:after { content: '%'; }
+      .fail {
+          background: #c00;
+          padding: 2px;
+          color: #fff;
+      }
+      .hidden { display: none !important;}
+      .thumbLeft {
+          float: left;
+          margin: 0px 1ex 1ex 0px;
+      }
+      .thumbClear {clear: both;}
+      .attrName {font-weight: bold;}
+      .box__icon {
+          width: 100%;
+          height: 80px;
+          fill: #92b0b3;
+          display: block;
+          margin-top: 1em;
+          margin-bottom: 40px;
+      }
+      .box__dragndrop {
+          text-align: center;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="wrapper" class="container-fluid">
+      <div class="container-fluid">
+        <div id="holder" class="container-fluid">
+          <svg class="box__icon" xmlns="http://www.w3.org/2000/svg" width="50" height="43" viewBox="0 0 50 43">
+            <path d="M48.4 26.5c-.9 0-1.7.7-1.7 1.7v11.6h-43.3v-11.6c0-.9-.7-1.7-1.7-1.7s-1.7.7-1.7 1.7v13.2c0 .9.7 1.7 1.7 1.7h46.7c.9 0 1.7-.7 1.7-1.7v-13.2c0-1-.7-1.7-1.7-1.7zm-24.5 6.1c.3.3.8.5 1.2.5.4 0 .9-.2 1.2-.5l10-11.6c.7-.7.7-1.7 0-2.4s-1.7-.7-2.4 0l-7.1 8.3v-25.3c0-.9-.7-1.7-1.7-1.7s-1.7.7-1.7 1.7v25.3l-7.1-8.3c-.7-.7-1.7-.7-2.4 0s-.7 1.7 0 2.4l10 11.6z"/>
+          </svg>
+          <p class="box__dragndrop">Drag files here.</p>
+        </div>
+        <div id="messages"></div> 
+        <p id="upload" class="hidden">
+          <label>Drag & drop not supported, but you can still upload via this input field:<br>
+            <input type="file">
+          </label>
+        </p>
+        <p id="filereader">File API & FileReader API not supported</p>
+        <p id="formdata">XHR2's FormData is not supported</p>
+        <p id="progress">XHR2's upload progress isn't supported</p>
+        <p>Upload progress: 
+          <progress id="uploadprogress" max="100" value="0">0
+          </progress>
+        </p>
+        <p>Drag an image from your desktop on to the drop zone above to see the browser both render the preview, but also upload automatically to this server.</p>
+        <div id="imageHolder"></div> 
+      </div>
+      <script>
+        var messages = document.getElementById('messages');
+        var imageHolder = document.getElementById('imageHolder');
+        var holder = document.getElementById('holder'),
+            tests = {
+                filereader: typeof FileReader != 'undefined',
+                dnd: 'draggable' in document.createElement('span'),
+                formdata: !!window.FormData,
+                progress: "upload" in new XMLHttpRequest
+            }, 
+            support = {
+                filereader: document.getElementById('filereader'),
+                formdata: document.getElementById('formdata'),
+                progress: document.getElementById('progress')
+            },
+            acceptedTypes = {
+                'image/png': true,
+                'image/jpeg': true,
+                'image/gif': true
+            },
+            progress = document.getElementById('uploadprogress'),
+            fileupload = document.getElementById('upload');
+        
+        "filereader formdata progress".split(' ').forEach(function (api) {
+            if (tests[api] === false) {
+                support[api].className = 'fail';
+            } else {
+                // FFS. I could have done el.hidden = true, but IE doesn't support
+                // hidden, so I tried to create a polyfill that would extend the
+                // Element.prototype, but then IE10 doesn't even give me access
+                // to the Element object. Brilliant.
+                support[api].className = 'hidden';
+            }
+        });
+        
+        function previewfile(file) {
+            if (tests.filereader === true && acceptedTypes[file.type] === true) {
+                var reader = new FileReader();
+                reader.onload = function (event) {
+                    var image = new Image();
+                    image.src = event.target.result;
+                    console.log("file", file);
+                    console.log("image", image);
+                    image.width = 200; // a fake resize
+                    // imageHolder.appendChild(image);
+                    var alias = extractAlias(file.name);
+                    var elem = fileLayout(file, image);
+                    imageHolder.insertBefore(elem, imageHolder.childNodes[0]);
+                };
+        
+                reader.readAsDataURL(file);
+            }  else {
+                messages.innerHTML += '<p>Uploaded ' + file.name + ' ' + (file.size ? (file.size/1024|0) + 'K' : '');
+                console.log(file);
+            }
+        }
+        
+        function extractAlias(filename) {
+            var alias = null;
+            var matches = filename.match(/^[a-zA-Z]+/);
+            if (matches) {
+                alias = matches[0];
+            }
+            
+            return alias;
+        }
+        
+        // https://jsfiddle.net/xg7tek9j/7/
+        function generateUUID() {
+            var d = new Date().getTime();
+            if(window.performance && typeof window.performance.now === "function"){
+                d += performance.now();; //use high-precision timer if available
+            }
+            var uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+                var r = (d + Math.random()*16)%16 | 0;
+                d = Math.floor(d/16);
+                return (c=='x' ? r : (r&0x3|0x8)).toString(16);
+            });
+            return uuid;
+        }
+        
+        function fileLayout(file, image) {
+            var div = document.createElement("div");
+            image.className = "thumbLeft";
+            div.appendChild(image);
+            var table = document.createElement("table");
+            table.appendChild(attrRow("Name", file.name));
+            table.appendChild(attrRow("Size", file.size));
+            table.appendChild(attrRow("Type", file.type));
+            table.appendChild(attrRow("LastModified", file.lastModifiedDate));
+            div.appendChild(table);
+        
+            var last = document.createElement("p");
+            last.className = "thumbClear";
+            div.appendChild(last);
+        
+            return div;
+        }
+        
+        function attrRow(attrName, attrValue) {
+            var row = document.createElement("tr");
+            var attrItem = document.createElement("td");
+            var valueItem = document.createElement("td");
+            var attrText = document.createTextNode(attrName);
+            var sepText = document.createTextNode(":");
+            var valueText = document.createTextNode(attrValue);
+            attrItem.className = "attrName";
+            attrItem.appendChild(attrText);
+            attrItem.appendChild(sepText);
+            valueItem.appendChild(valueText);
+            row.appendChild(attrItem);
+            row.appendChild(valueItem);
+        
+            return row;
+        }    
+        
+        function readfiles(files) {
+            // debugger;
+            var formData = tests.formdata ? new FormData() : null;
+            for (var i = 0; i < files.length; i++) {
+                if (tests.formdata) formData.append('file', files[i]);
+                previewfile(files[i]);
+            }
+        
+            // now post a new XHR request
+            if (tests.formdata) {
+                var xhr = new XMLHttpRequest();
+                xhr.open('POST', '/devnull.php');
+                xhr.onload = function() {
+                    progress.value = progress.innerHTML = 100;
+                };
+        
+                if (tests.progress) {
+                    xhr.upload.onprogress = function (event) {
+                        if (event.lengthComputable) {
+                            var complete = (event.loaded / event.total * 100 | 0);
+                            progress.value = progress.innerHTML = complete;
+                        }
+                    }
+                }
+        
+                xhr.send(formData);
+            }
+        }
+        
+        if (tests.dnd) { 
+            var dragBoxEnter = function () { this.className = 'hover'; return false; };
+            var dragBoxLeave = function () { this.className = ''; return false; };
+        
+            holder.ondragover = dragBoxEnter;
+            holder.ondragenter = dragBoxEnter;
+        
+            holder.ondragend = dragBoxLeave;
+            holder.ondragleave = dragBoxLeave;
+        
+            holder.ondrop = function (e) {
+                this.className = '';
+                e.preventDefault();
+                readfiles(e.dataTransfer.files);
+            }
+        } else {
+            fileupload.className = 'hidden';
+            fileupload.querySelector('input').onchange = function () {
+                readfiles(this.files);
+            };
+        }
+      </script>
+    </div>
+  </body>
+</html>

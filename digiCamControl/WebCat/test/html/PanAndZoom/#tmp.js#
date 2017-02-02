@@ -1,0 +1,41 @@
+          canvas.addEventListener('mouseup',function(evt){
+              if (!dragged) {
+                zoom(evt.shiftKey ? -1 : 1 );
+              }
+              else {
+                if (dragStart) {
+                  lastX = evt.offsetX || (evt.pageX - canvas.offsetLeft);
+                  lastY = evt.offsetY || (evt.pageY - canvas.offsetTop);
+                  var pt = ctx.transformedPoint(lastX, lastY);
+                  ctx.translate(pt.x - dragStart.x, pt.y - dragStart.y);
+                  // checkBounds();
+                  var pt1 = ctx.transformedPoint(0, 0);
+                  var pt2 = ctx.transformedPoint(canvas.width, canvas.height);
+                  if (pt1.x < 0 || pt1.y < 0) {
+                    // need to grow by that many pixels to cover growth
+                    var currWidth = pt2.x - pt1.x;
+                    var currHeight = pt2.y  - pt1.y;
+                    var newWidth = currWidth - pt1.x;
+                    var newHeight = currHeight - pt1.y;
+                    var zoomPctWidth = newWidth / currWidth;
+                    var zoomPctHeight = newHeight / currHeight;
+                    var zoomPct = Math.max(zoomPctWidth, zoomPctHeight);
+                    //zoomPercent(zoomPct);
+                    var xf = ctx.getTransform();
+                    ctx.scale(zoomPct, zoomPct);
+                    // ctx.translate(0, pt.y - dragStart.y);
+                    xf = ctx.getTransform();
+                    console.log("xform is ", ctx.getTransform());
+                    if (pt1.x < 0) {
+                      xf.e = 0;
+                    }
+                    if (pt1.y < 0) {
+                      xf.f = 0;
+                    }
+                    ctx.setTransform(xf.a, xf.b, xf.c, xf.d, xf.e, xf.f);
+                    redraw();
+                  }
+                }
+              }
+              dragStart = null;
+            },false);

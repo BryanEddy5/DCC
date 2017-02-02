@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <script type="text/javascript" src="https://internal-cdn.amazon.com/btk.amazon.com/ajax/libs/jquery/2.1.4/jquery-2.1.4.js"></script>
+    <title>Zooming via HTML5 Canvas Context</title>
+    <style type="text/css" media="screen">
+      body { background:#eee; margin:0.5em; }
+      canvas { display:block; margin:1em auto; background:#fff; border:1px solid #ccc }
+    </style>
+  </head>
+  <body>
+<!--
+    <p>
+      Drag to pan. Click to zoom at that 
+      location. Shift-click to zoom out. Mousewheel up/down over the canvas to
+      zoom in to/out from that location.
+    </p>
+    <p>
+      Redrawing the canvas at different scales the strokes remain smooth
+      during zooming.
+    </p>
+-->
+    <table>
+      <tr>
+        <td>
+          <canvas id="liveViewCanvas" width="280" height="420"></canvas>
+        </td>
+        <td>
+          <canvas id="croppedViewCanvas" width="280" height="420"></canvas>
+        </td>
+        <td>
+    <p>
+      <span id="canvasWidth"></span> x <span id="canvasHeight"></span>
+    </p>
+    <p>
+      Translate:
+      x: <input type="text" id="translateX"></input> 
+      y: <input type="text" id="translateY"></input>
+      <button id="doTranslate">Do Translate</button>
+    </p>
+    <p>
+      Scale:
+      scaleFactor: <input type="text" id="scaleFactor"></input>  
+      <button id="doScale">Do scale</button>
+    </p>
+    <p>
+      xform:
+      <button id="updateXform">Update Transform</button>
+      <button id="resetXform">Reset Transform</button>
+      <br/>
+      a: <input type="text" id="xfA"></input> 
+      b: <input type="text" id="xfB"></input>
+      c: <input type="text" id="xfC"></input> 
+      d: <input type="text" id="xfD"></input>
+      e: <input type="text" id="xfE"></input> 
+      f: <input type="text" id="xfF"></input>
+    </p>
+    <p>
+    <p>
+      Mapped Corners (crop):
+      pt1x: <input type="text" id="pt1X"></input> 
+      pt1y: <input type="text" id="pt1Y"></input>
+      pt2x: <input type="text" id="pt2X"></input> 
+      pt2y: <input type="text" id="pt2Y"></input>
+    </p>
+    <p>
+      Canvas Corners (zoom adjust):
+      c1cX: <input type="text" id="c1cX"></input> 
+      c1cY: <input type="text" id="c1cY"></input>
+      c2cX: <input type="text" id="c2cX"></input> 
+      c2cY: <input type="text" id="c2cY"></input>
+    </p>
+    <p>
+      Mouse:
+      x: <input type="text" id="rawMX"></input> 
+      y: <input type="text" id="rawMY"></input>
+      xfm(x): <input type="text" id="xfmMX"></input> 
+      xfm(y): <input type="text" id="xfmMY"></input>
+    </p>
+    <p>
+      transformed point:
+      x: <input type="text" id="tinX"></input> 
+      y: <input type="text" id="tinY"></input>
+      xfm(x): <input type="text" id="toutX"></input> 
+      xfm(y): <input type="text" id="toutY"></input>
+      <button id="doTransform">Transform</button>
+    </p>
+    <p>
+      untransformed point:
+      xfm(x): <input type="text" id="t2uInX"></input> 
+      xfm(y): <input type="text" id="t2uInY"></input>
+      x: <input type="text" id="t2uOutX"></input> 
+      y: <input type="text" id="t2uOutY"></input>
+      <button id="doUnTransform">Untransform</button>
+    </p>
+	</td>
+      </tr>
+    </table>
+    <script type="text/javascript" charset="utf-8">
+      var canvas = document.getElementById('liveViewCanvas');
+      canvas.width = 280;
+      canvas.height = 420;
+      var photo = new Image;
+
+      var croppedCanvas = document.getElementById('croppedViewCanvas');
+      croppedCanvas.width = canvas.width;
+      croppedCanvas.height = canvas.height;
+      var croppedPhoto = new Image;
+
+      window.onload = function(){               
+
+      $("#canvasWidth").text(canvas.width);
+      $("#canvasHeight").text(canvas.height);
+
+      $( "#doTranslate" ).click(function() {
+        var x = $("#translateX").val();
+        var y = $("#translateY").val();
+        ctx.translate(x, y);
+        redraw();
+      });
+
+      $( "#doScale" ).click(function() {
+        var scaleFactor = $("#scaleFactor").val();
+        ctx.scale(scaleFactor, scaleFactor);
+        redraw();
+      });
+
+      $( "#updateXform" ).click(function() {
+        var a = $("#xfA").val();
+        var b = $("#xfB").val();
+        var c = $("#xfC").val();
+        var d = $("#xfD").val();
+        var e = $("#xfE").val();
+        var f = $("#xfF").val();
+        ctx.setTransform(a, b, c, d, e, f);
+        redraw();
+      });
+
+      $( "#resetXform" ).click(function() {
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+        redraw();
+      });
+
+      function xformDisplay() {
+        var xf = ctx.getTransform();
+        $("#xfA").val(xf.a);
+        $("#xfB").val(xf.b);
+        $("#xfC").val(xf.c);
+        $("#xfD").val(xf.d);
+        $("#xfE").val(xf.e);
+        $("#xfF").val(xf.f);
+      }
+
+      function cornersDisplay() {
+        var pt1 = ctx.transformedPoint(0,0);
+        var pt2 = ctx.transformedPoint(canvas.width,canvas.height);
+        $("#pt1X").val(pt1.x);
+        $("#pt1Y").val(pt1.y);
+        $("#pt2X").val(pt2.x);
+        $("#pt2Y").val(pt2.y);
+      }
+
+      function CanvasCornersDisplay() {
+        var pt1 = ctx.untransformedPoint(0,0);
+        var pt2 = ctx.untransformedPoint(canvas.width,canvas.height);
+        $("#c1cX").val(pt1.x);
+        $("#c1cY").val(pt1.y);
+        $("#c2cX").val(pt2.x);
+        $("#c2cY").val(pt2.y);
+      }
+
+      function mouseDisplay(mx, my) {
+        var xfmM = ctx.transformedPoint(mx,my);
+        $("#rawMX").val(mx);
+        $("#rawMY").val(my);
+        $("#xfmMX").val(xfmM.x);
+        $("#xfmMY").val(xfmM.y);
+      }
+
+      $( "#doTransform" ).click(function() {
+        var x = $("#tinX").val();
+        var y = $("#tinY").val();
+        var pt = ctx.transformedPoint(x, y);
+        $("#toutX").val(pt.x);
+        $("#toutY").val(pt.y);
+      });
+
+      $( "#doUnTransform" ).click(function() {
+        var x = $("#t2uInX").val();
+        var y = $("#t2uInY").val();
+        var pt = ctx.untransformedPoint(x, y);
+        $("#t2uOutX").val(pt.x);
+        $("#t2uOutY").val(pt.y);
+      });
+
+          var ctx = canvas.getContext('2d');
+          trackTransforms(ctx);
+
+          function isOutOfBounds() {
+            var p1 = ctx.transformedPoint(0,0);
+            var p2 = ctx.transformedPoint(canvas.width,canvas.height);
+            var isOut = p1.x < 0 || p1.y < 0 || p2.x > canvas.width || p2.y > canvas.height;
+
+            return isOut;
+          }
+
+          function redraw() {
+            // Clear the entire canvas
+            var p1 = ctx.transformedPoint(0,0);
+            var p2 = ctx.transformedPoint(canvas.width,canvas.height);
+            var xf = ctx.getTransform();
+            //console.log("p1 is ", p1, " and p2 is ", p2);
+            //console.log("xform is ", xf);
+            ctx.clearRect(p1.x, p1.y, p2.x - p1.x, p2.y - p1.y);
+
+            ctx.drawImage(photo, 0, 0, canvas.width, canvas.height);
+
+            // draw bounding box
+            // 88 / 256 = 0.34375 for opacity
+            ctx.strokeStyle = "rgba(214, 249, 249, 0.34375)"; // "blue";
+            var lineWidth = 3;
+            var p3 = ctx.transformedPoint(lineWidth, lineWidth);
+            ctx.lineWidth = p3.x - p1.x;
+            var bb1 = ctx.transformedPoint(42, 48);
+            var bb2 = ctx.transformedPoint(235, 302);
+            ctx.strokeRect(bb1.x, bb1.y, bb2.x - bb1.x, bb2.y - bb1.y);
+
+            redrawCropped();
+
+            xformDisplay();
+            cornersDisplay();
+            CanvasCornersDisplay();
+          }
+          redraw();
+
+          function redrawCropped() {
+            var croppedCtx = croppedCanvas.getContext('2d');
+            var width = croppedCanvas.width;
+            var height = croppedCanvas.height;
+
+            // Clear the entire canvas
+            croppedCtx.clearRect(0, 0, width, height);
+
+            croppedCtx.drawImage(croppedPhoto, 0, 0, width, height);
+
+            var pt1 = ctx.transformedPoint(0,0);
+            var pt2 = ctx.transformedPoint(canvas.width,canvas.height);
+
+            croppedCtx.strokeStyle = "green";
+            croppedCtx.lineWidth = 1;
+            croppedCtx.strokeRect(pt1.x, pt1.y, pt2.x - pt1.x, pt2.y - pt1.y);
+          }
+          redrawCropped();
+
+          //console.log("initialize: updated lastX and lastY");
+          var lastX = canvas.width / 2;
+          var lastY = canvas.height / 2;
+          var dragStart
+          var dragged;
+
+          canvas.addEventListener('mousedown', function(evt) {
+              document.body.style.mozUserSelect = document.body.style.webkitUserSelect = document.body.style.userSelect = 'none';
+              //console.log("mousedown: updated lastX and lastY");
+              lastX = evt.offsetX || (evt.pageX - canvas.offsetLeft);
+              lastY = evt.offsetY || (evt.pageY - canvas.offsetTop);
+              dragStart = ctx.transformedPoint(lastX, lastY);
+              dragged = false;
+            }, false);
+
+          canvas.addEventListener('mousemove',function(evt){
+              //console.log("mousemove: updated lastX and lastY");
+              lastX = evt.offsetX || (evt.pageX - canvas.offsetLeft);
+              lastY = evt.offsetY || (evt.pageY - canvas.offsetTop);
+              mouseDisplay(lastX, lastY);
+              dragged = true;
+              if (dragStart){
+                var pt = ctx.transformedPoint(lastX,lastY);
+                ctx.translate(pt.x-dragStart.x,pt.y-dragStart.y);
+                redraw();
+              }
+            },false);
+
+          canvas.addEventListener('mouseup',function(evt){
+              if (!dragged) {
+                zoom(evt.shiftKey ? -1 : 1 );
+              }
+              else {
+                if (dragStart) {
+                  lastX1 = evt.offsetX || (evt.pageX - canvas.offsetLeft);
+                  lastY1 = evt.offsetY || (evt.pageY - canvas.offsetTop);
+                  if (lastX1 != lastX || lastY1 != lastY) {
+                    console.log("up differs");
+                  }
+                  var pt = ctx.transformedPoint(lastX, lastY);
+                  ctx.translate(pt.x - dragStart.x, pt.y - dragStart.y);
+
+                  var pt1 = ctx.transformedPoint(0, 0);
+                  var pt2 = ctx.transformedPoint(canvas.width, canvas.height);
+                  var currWidth = pt2.x - pt1.x;
+                  var currHeight = pt2.y  - pt1.y;
+
+                  var c1c = ctx.untransformedPoint(0, 0);
+                  var c2c = ctx.untransformedPoint(canvas.width, canvas.height);
+                  var zoomSides = {left: 1, top: 1, right: 1, bottom: 1};
+                  var xf = ctx.getTransform();
+
+                  // may need to grow by the number of pixels exposed by pan
+                  if (c1c.x > 0) {
+                    zoomSides.left = 1 + c1c.x / currWidth;
+                  }
+                  if (c1c.y > 0) {
+                    zoomSides.top = 1 + c1c.y / currHeight;
+                  }
+                  if (pt2.x > canvas.width) {
+                    zoomSides.right = 1 + (pt2.x - canvas.width) / currWidth;
+                  }
+                  if (pt2.y > canvas.height) {
+                    zoomSides.bottom = 1 + (pt2.y - canvas.height) / currHeight;
+                  }
+
+                  var zoomPct = Math.max(zoomSides.left, zoomSides.top, zoomSides.right, zoomSides.bottom);
+                  if (zoomPct == 1) {
+                    zoomPct = xf.a; // same as xf.d
+                  }
+                  else {
+                    ctx.scale(zoomPct, zoomPct);
+                    xf = ctx.getTransform();
+                  }
+
+                  if (c1c.x > 0) {
+                    xf.e = 0;
+                  }
+                  if (c1c.y > 0) {
+                    xf.f = 0;
+                  }
+                  ctx.setTransform(xf.a, xf.b, xf.c, xf.d, xf.e, xf.f);
+                  redraw();
+                }
+              }
+              dragStart = null;
+            },false);
+      
+          var scaleFactor = 1.01;
+          var zoom = function(clicks){
+            // console.log("zoom clicks is ", clicks);
+            doZoom(clicks);
+            checkBounds();
+            redraw();
+          }
+
+          function checkBounds() {
+            //while (isOutOfBounds()) {
+            //  doZoom(1); // should calculate exact zoom, notifify user
+            //}
+          }
+
+        var zoomPercentStep = 0.01;
+          function doZoom(clicks) {
+            var xf = ctx.getTransform();
+            var zoomFactor = xf.a + (zoomPercentStep * clicks);
+
+            var pt = ctx.transformedPoint(lastX, lastY);
+            ctx.translate(pt.x,pt.y);
+
+            //var factor = Math.pow(scaleFactor, clicks);
+            //ctx.scale(factor, factor);
+
+            zoomPercent(zoomFactor);
+
+            ctx.translate(-pt.x, -pt.y);
+          }
+         
+          function zoomPercent(zoomPct) {
+            var xf = ctx.getTransform();
+            ctx.setTransform(zoomPct, xf.b, xf.c, zoomPct, xf.e, xf.f);
+          }
+
+          var handleScroll = function(evt){
+            //console.log("handleScroll: lastX: ", lastX, ", lastY: ", lastY);
+            var delta = evt.wheelDelta ? evt.wheelDelta / 40 : evt.detail ? -evt.detail : 0;
+            // console.log("wheelDelta: ", evt.wheelDelta, ", detail: ", evt.detail, ", delta: ", delta);
+            if (delta) {
+              zoom(delta);
+            }
+            return evt.preventDefault() && false;
+          };
+
+          canvas.addEventListener('DOMMouseScroll',handleScroll,false);
+          canvas.addEventListener('mousewheel',handleScroll,false);
+      };
+
+      var imageFile = 'file:///C:/temp/katey_benchmarkOut.jpg';
+      // var backgroundFile = 'file:///C:/Users/chemphi/Documents/TBR/WebCat/overlay280x420.png';
+      photo.src = imageFile;
+      croppedPhoto.src = imageFile;
+
+      // Adds ctx.getTransform() - returns an SVGMatrix
+      // Adds ctx.transformedPoint(x,y) - returns an SVGPoint
+      function trackTransforms(ctx){
+          var svg = document.createElementNS("http://www.w3.org/2000/svg",'svg');
+          var xform = svg.createSVGMatrix();
+          ctx.getTransform = function(){ return xform; };
+
+          ctx.getTransform = function(){
+            return xform;
+          };
+
+          var scale = ctx.scale;
+          ctx.scale = function(sx, sy){
+            xform = xform.scaleNonUniform(sx, sy);
+            return scale.call(ctx, sx, sy);
+          };
+
+          var translate = ctx.translate;
+          ctx.translate = function(dx, dy){
+            xform = xform.translate(dx, dy);
+            return translate.call(ctx, dx, dy);
+          };
+
+          var setTransform = ctx.setTransform;
+          ctx.setTransform = function(a,b,c,d,e,f){
+            xform.a = a;
+            xform.b = b;
+            xform.c = c;
+            xform.d = d;
+            xform.e = e;
+            xform.f = f;
+            return setTransform.call(ctx,a,b,c,d,e,f);
+          };
+
+          var pt  = svg.createSVGPoint();
+          ctx.transformedPoint = function(x, y){
+            pt.x = x; pt.y = y;
+            return pt.matrixTransform(xform.inverse());
+          }
+
+          ctx.untransformedPoint = function(x, y) {
+            var upt = {
+              x: x * xform.a + y * xform.c + xform.e,
+              y: x * xform.b + y * xform.d + xform.f
+            };
+            return upt;
+          }
+      }
+    </script>
+  </body>
+</html>

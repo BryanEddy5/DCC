@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <title>Zooming via HTML5 Canvas Context</title>
+    <style type="text/css" media="screen">
+      body { background:#eee; margin:1em; text-align:center; }
+      canvas { display:block; margin:1em auto; background:#fff; border:1px solid #ccc }
+    </style>
+  </head>
+  <body>
+    <p>
+      Drag to pan. Click to zoom at that 
+      location. Shift-click to zoom out. Mousewheel up/down over the canvas to
+      zoom in to/out from that location.
+    </p>
+    <p>
+      Redrawing the canvas at different scales the strokes remain smooth
+      during zooming.
+    </p>
+    <canvas id="liveViewCanvas" width="280" height="420"></canvas>
+    <script type="text/javascript" charset="utf-8">
+      var canvas = document.getElementById('liveViewCanvas');
+      canvas.width = 280;
+      canvas.height = 420;
+      var photo = new Image;
+      window.onload = function(){		
+          var ctx = canvas.getContext('2d');
+          trackTransforms(ctx);
+          function redraw(){
+      	    // Clear the entire canvas
+      	    var p1 = ctx.transformedPoint(0,0);
+      	    var p2 = ctx.transformedPoint(canvas.width,canvas.height);
+            console.log("p1 is ", p1, " and p2 is ", p2);
+      	    ctx.clearRect(p1.x, p1.y, p2.x - p1.x, p2.y - p1.y);
+
+      	    ctx.drawImage(photo,0,0,canvas.width,canvas.height);
+          }
+          redraw();
+
+          var lastX = canvas.width / 2;
+          var lastY = canvas.height / 2;
+          var dragStart
+          var dragged;
+
+          canvas.addEventListener('mousedown', function(evt) {
+      	      document.body.style.mozUserSelect = document.body.style.webkitUserSelect = document.body.style.userSelect = 'none';
+      	      lastX = evt.offsetX || (evt.pageX - canvas.offsetLeft);
+      	      lastY = evt.offsetY || (evt.pageY - canvas.offsetTop);
+      	      dragStart = ctx.transformedPoint(lastX, lastY);
+      	      dragged = false;
+            }, false);
+
+          canvas.addEventListener('mousemove',function(evt){
+      	      lastX = evt.offsetX || (evt.pageX - canvas.offsetLeft);
+      	      lastY = evt.offsetY || (evt.pageY - canvas.offsetTop);
+      	      dragged = true;
+      	      if (dragStart){
+      	        var pt = ctx.transformedPoint(lastX,lastY);
+      	        ctx.translate(pt.x-dragStart.x,pt.y-dragStart.y);
+      	        redraw();
+              }
+            },false);
+
+          canvas.addEventListener('mouseup',function(evt){
+      	      dragStart = null;
+      	      if (!dragged) {
+                zoom(evt.shiftKey ? -1 : 1 );
+              }
+            },false);
+      
+          var scaleFactor = 1.1;
+          var zoom = function(clicks){
+      	    var pt = ctx.transformedPoint(lastX, lastY);
+      	    ctx.translate(pt.x,pt.y);
+      	    var factor = Math.pow(scaleFactor, clicks);
+      	    ctx.scale(factor, factor);
+      	    ctx.translate(-pt.x, -pt.y);
+      	    redraw();
+          }
+
+          var handleScroll = function(evt){
+      	    var delta = evt.wheelDelta ? evt.wheelDelta / 40 : evt.detail ? -evt.detail : 0;
+      	    if (delta) {
+              zoom(delta);
+            }
+      	    return evt.preventDefault() && false;
+          };
+
+          canvas.addEventListener('DOMMouseScroll',handleScroll,false);
+          canvas.addEventListener('mousewheel',handleScroll,false);
+      };
+
+      photo.src = 'file:///C:/temp/katey_benchmarkOut.jpg';
+      
+      // Adds ctx.getTransform() - returns an SVGMatrix
+      // Adds ctx.transformedPoint(x,y) - returns an SVGPoint
+      function trackTransforms(ctx){
+          var svg = document.createElementNS("http://www.w3.org/2000/svg",'svg');
+          var xform = svg.createSVGMatrix();
+
+          ctx.getTransform = function(){
+            return xform;
+          };
+
+          var scale = ctx.scale;
+          ctx.scale = function(sx, sy){
+      	    xform = xform.scaleNonUniform(sx, sy);
+      	    return scale.call(ctx, sx, sy);
+          };
+
+          var translate = ctx.translate;
+          ctx.translate = function(dx, dy){
+      	    xform = xform.translate(dx, dy);
+      	    return translate.call(ctx, dx, dy);
+          };
+
+          var pt  = svg.createSVGPoint();
+          ctx.transformedPoint = function(x, y){
+      	    pt.x = x; pt.y = y;
+      	    return pt.matrixTransform(xform.inverse());
+          }
+      }
+    </script>
+  </body>
+</html>

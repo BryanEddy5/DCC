@@ -1,0 +1,149 @@
+<!DOCTYPE htm>
+<html lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <script type="text/javascript" src="https://internal-cdn.amazon.com/btk.amazon.com/ajax/libs/jquery/2.1.4/jquery-2.1.4.js"></script>
+    <script type="text/javascript" src="panAndZoom.js"></script>
+    <title>Pan and Zoom HTML5 Canvas</title>
+    <style type="text/css" media="screen">
+      body { background:#eee; margin:0.5em; }
+      canvas { display:block; margin:1em auto; background:#fff; border:1px solid #ccc }
+    </style>
+  </head>
+  <body>
+    <!--
+	<p>
+	  Drag to pan. Click to zoom at that 
+	  location. Shift-click to zoom out. Mousewheel up/down over the canvas to
+	  zoom in to/out from that location.
+	</p>
+    <p>
+      Redrawing the canvas at different scales the strokes remain smooth
+      during zooming.
+    </p>
+    -->
+    <table>
+      <tr>
+        <td>
+          <canvas id="liveViewCanvas" width="280" height="420"></canvas>
+        </td>
+        <td>
+          <canvas id="croppedViewCanvas" width="280" height="420"></canvas>
+        </td>
+        <td>
+	  <p>
+	    Zoom %:
+	    <input type="text" id="zoomPercent" readonly="readonly"></input>
+	    <input id="zoomSlider" type ="range" min ="1.0" max="3.0" step ="0.01" value="1.0"/>
+	  </p>
+	  <p>
+	    <button id="resetXform">Cancel Crop</button>
+	  </p>
+	  <p>
+	    <span id="messageArea">Message Area</span>&nbsp;
+	  </p>  
+	  <p>
+	    xform:
+	    <br/>
+	    a: <input type="text" id="xfA"></input> 
+	    b: <input type="text" id="xfB"></input>
+	    c: <input type="text" id="xfC"></input> 
+	    d: <input type="text" id="xfD"></input>
+	    e: <input type="text" id="xfE"></input> 
+	    f: <input type="text" id="xfF"></input>
+	  </p>
+	  <p>
+	  <p>
+	    Mapped Corners (crop):
+	    pt1x: <input type="text" id="pt1X"></input> 
+	    pt1y: <input type="text" id="pt1Y"></input>
+	    pt2x: <input type="text" id="pt2X"></input> 
+	    pt2y: <input type="text" id="pt2Y"></input>
+	  </p>
+	  <p>
+	    Canvas Corners (zoom adjust):
+	    c1cX: <input type="text" id="c1cX"></input> 
+	    c1cY: <input type="text" id="c1cY"></input>
+	    c2cX: <input type="text" id="c2cX"></input> 
+	    c2cY: <input type="text" id="c2cY"></input>
+	  </p>
+	  <p>
+	    Mouse:
+	    x: <input type="text" id="rawMX"></input> 
+	    y: <input type="text" id="rawMY"></input>
+	    xfm(x): <input type="text" id="xfmMX"></input> 
+	    xfm(y): <input type="text" id="xfmMY"></input>
+	  </p>
+	  <p>
+	    <button id="getCropButton">Get Crop</button>
+	  </p>
+	</td>
+      </tr>
+    </table>
+
+    <script type="text/javascript" charset="utf-8">
+      // need to have the image loaded
+      var canvasImage = new Image;
+      // canvasImage.src = 'file:///C:/temp/katey_benchmarkOut.jpg';
+      // canvasImage.src = 'file:///C:/Users/chemphi/Documents/TBR/WaistUp/armFold2.jpg';
+      canvasImage.src = 'armFold2.jpg';
+      
+      function warningCallback(message) {
+        $("#messageArea").text(message);
+      }
+
+      function xformDisplayCallback(xf) {
+        $("#xfA").val(xf.a);
+        $("#xfB").val(xf.b);
+        $("#xfC").val(xf.c);
+        $("#xfD").val(xf.d);
+        $("#xfE").val(xf.e);
+        $("#xfF").val(xf.f);
+      }
+
+      function mappedCornersDisplayCallback(pt1, pt2) {
+        $("#pt1X").val(pt1.x);
+        $("#pt1Y").val(pt1.y);
+        $("#pt2X").val(pt2.x);
+        $("#pt2Y").val(pt2.y);
+      }
+
+      function unmappedCornersDisplayCallback(pt1, pt2) {
+        $("#c1cX").val(pt1.x);
+        $("#c1cY").val(pt1.y);
+        $("#c2cX").val(pt2.x);
+        $("#c2cY").val(pt2.y);
+      }
+
+      function mouseDisplayCallback(pt, xfmPt) {
+        $("#rawMX").val(pt.x);
+        $("#rawMY").val(pt.y);
+        $("#xfmMX").val(xfmPt.x);
+        $("#xfmMY").val(xfmPt.y);
+      }
+
+      window.onload = function() {
+        console.log("hello from PanAndZoom html");
+
+        var panAndZoom = new PanAndZoom("liveViewCanvas", canvasImage, "zoomSlider", "zoomPercent");
+
+        panAndZoom.showCroppedView("croppedViewCanvas");
+        panAndZoom.addWarningCallback(warningCallback);
+        panAndZoom.addXformDisplayCallback(xformDisplayCallback);
+        panAndZoom.addMappedCornersDisplayCallback(mappedCornersDisplayCallback);
+        panAndZoom.addUnmappedCornersDisplayCallback(unmappedCornersDisplayCallback);
+        panAndZoom.addMouseDisplayCallback(mouseDisplayCallback);
+
+        $("#getCropButton").click(function() {
+          var cropCorners = panAndZoom.getCropCorners();
+          console.log("Crop corners: ", cropCorners[0], cropCorners[1]);
+        });
+
+        $("#resetXform").click(function() {
+          panAndZoom.resetCrop();
+        });
+      }
+    </script>
+
+  </body>
+</html>
