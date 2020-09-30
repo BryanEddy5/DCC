@@ -1,117 +1,223 @@
 <!doctype html>
 <html lang="en">
-  <head>
+<head>
     <meta charset="UTF-8">
-    <link type="text/css" rel="stylesheet" href="//internal-cdn.amazon.com/oneg.amazon.com/assets/3.2.5/css/application.min.css" />
+    <link type="text/css" rel="stylesheet"
+          href="//internal-cdn.amazon.com/oneg.amazon.com/assets/3.2.5/css/application.min.css"/>
 
-    <script type="text/javascript" src="https://internal-cdn.amazon.com/btk.amazon.com/ajax/libs/jquery/2.1.4/jquery-2.1.4.js"></script>
+    <script type="text/javascript"
+            src="https://internal-cdn.amazon.com/btk.amazon.com/ajax/libs/jquery/2.1.4/jquery-2.1.4.js"></script>
 
     <style type="text/css">
-      .goodState   {color: green;}
-      .badState    {color: red;}
-      ul           {list-style: none;}
-      ul li:before {content: "\00BB \0020";}
+        body {
+            background-color: #EBEBEB
+        }
+
+        #header {
+            color: #fff;
+            width: 100%;
+            height: 55px;
+            border-top: #FF9900 3px solid;
+            box-sizing: border-box;
+            transition: all 0.33s cubic-bezier(0.685, 0.0473, 0.346, 1);
+            align-items: center;
+            flex-direction: column;
+            background-color: #232F3E;
+            margin-bottom: 32px;
+        }
+
+        #searchForm {
+          display: flex;
+          width: 100%;
+          align-items: flex-end;
+          justify-content: center;
+          padding: 20px 0;
+          margin-bottom: 16px;
+          border-bottom: #b3b3b3 1px solid;
+        }
+
+        #locationSelectSubmit, #getStatusButton {
+          opacity: 1;
+          background-color: #FF9900;
+          color: #FFFFFF;
+          border: none 0;
+          outline: none;
+          font-weight: 500;
+          line-height: 1.75;
+          border-radius: 4px;
+          letter-spacing: 0.02857em;
+          text-transform: uppercase;
+          padding: 6px 16px;
+        }
+
+        #locationSelectSubmit {
+          margin-left: 16px;
+        }
+
+        .goodState {
+            color: green;
+        }
+
+        .badState {
+            color: red;
+        }
+
+        ul {
+            list-style: none;
+        }
+
+        ul li:before {
+            content: "\00BB \0020";
+        }
+
+        .navbar-brand {
+          color: #FFFFFF;
+        }
+
+        .navbar-brand:hover, .navbar-brand:visited, .navbar-brand:link, .navbar-brand:active, .navbar-brand:hover:active {
+          color: #FFFFFF;
+        }
+
+        .screen-card {
+            width: 100%;
+            padding: 0;
+            position: relative;
+            min-height: 300px;
+            border-radius: 4px;
+            background-color: #FFFFFF;
+        }
+
+        .screen-card-header {
+            color: #fff;
+            height: 48px;
+            display: flex;
+            padding: 0 24px;
+            min-height: 56px;
+            align-items: center;
+            border-radius: 4px 4px 0 0;
+            justify-content: space-between;
+            background-color: #232F3E;
+        }
+
+        .screen-card-header h3 {
+          color: #FFFFFF;
+          font-weight: 400;
+        }
     </style>
 
     <script>
-    var baseUrl = "";
+        var baseUrl = "";
 
-    $(document).ready(function(){
-        function jsonpGetStatus() {
-            clearStatus();
-            var sessionAPI = baseUrl + "jsonp.api?jsoncallback=?";
+        $(document).ready(function () {
+            function jsonpGetStatus() {
+                clearStatus();
+                var sessionAPI = baseUrl + "jsonp.api?jsoncallback=?";
 
-            $.ajax({
-                dataType: "json",
-                url: sessionAPI,
-                data: {
-                    operation: "status",
-                    format: "json"
-                },
-                timeout: 2000 // wait 2 seconds
-            }).fail(function( jqxhr, textStatus, error ) {
-                var msg = "Request Failed (" + textStatus + ")!"
-                if (textStatus === "timeout") {
-                    msg = msg + " Make sure DCC is running."
+                $.ajax({
+                    dataType: "json",
+                    url: sessionAPI,
+                    data: {
+                        operation: "status",
+                        format: "json"
+                    },
+                    timeout: 2000 // wait 2 seconds
+                }).fail(function (jqxhr, textStatus, error) {
+                    var msg = "Request Failed (" + textStatus + ")!"
+                    if (textStatus === "timeout") {
+                        msg = msg + " Make sure DCC is running."
+                    }
+                    $('#SoftwareVersionId').text("Unknown");
+                    $('#AjaxStatusId').text(msg);
+                }).done(function (jsonResult) {
+                    var softwareVersion = jsonResult["version"];
+                    $('#SoftwareVersionId').text(softwareVersion);
+
+                    var cameraSerialNumber = jsonResult["cameraSerialNumber"];
+                    var msg;
+                    if (cameraSerialNumber) {
+                        msg = "Connected and on!"
+                        addRemoveClass("AjaxStatusId", "goodState", "badState");
+                    } else {
+                        msg = "Disconnected or off!"
+                    }
+                    $('#AjaxStatusId').text(msg);
+
+                    var postData = {
+                        cameraName: jsonResult["cameraName"],
+                        cameraSerialNumber: cameraSerialNumber,
+                        cameraSettings: jsonResult["cameraSettings"]
+                    };
+
+                    var postDataStringified = JSON.stringify(postData, null, 2);
+                    $('#StatusDataId').text(postDataStringified);
+                });
+            }
+
+            function clearStatus() {
+                $('#StatusDataId').text("");
+                $('#SoftwareVerionId').text("");
+                $('#AjaxStatusId').text("");
+                addRemoveClass("AjaxStatusId", "badState", "goodState"); // assume the worst
+            }
+
+            function addRemoveClass(elemId, addClass, removeClass) {
+                $('#' + elemId).addClass(addClass).removeClass(removeClass);
+            }
+
+            var locationSelect = $("#locationSelect");
+
+            $("#getStatusButton").click(jsonpGetStatus);
+            $("#clearButton").click(clearStatus);
+            $("#searchForm").submit(function (event) {
+                event.preventDefault();
+                var location = locationSelect.val();
+
+                if (location !== "--") {
+                    window.location = location;
                 }
-                $('#SoftwareVersionId').text("Unknown");
-                $('#AjaxStatusId').text(msg);
-            }).done(function (jsonResult) {
-                var softwareVersion = jsonResult["version"];
-                $('#SoftwareVersionId').text(softwareVersion);
-
-                var cameraSerialNumber =  jsonResult["cameraSerialNumber"];
-                var msg;
-                if (cameraSerialNumber) {
-                    msg = "Connected and on!"
-                    addRemoveClass("AjaxStatusId", "goodState", "badState");
-                }
-                else {
-                    msg = "Disconnected or off!"
-                }
-                $('#AjaxStatusId').text(msg);
-
-                var postData = {
-                    cameraName: jsonResult["cameraName"],
-                    cameraSerialNumber: cameraSerialNumber,
-                    cameraSettings: jsonResult["cameraSettings"]
-                };
-
-                var postDataStringified = JSON.stringify(postData, undefined, 4);
-                $('#StatusDataId').text(postDataStringified);
             });
-        }
 
-        function clearStatus() {
-            $('#StatusDataId').text("");
-            $('#SoftwareVerionId').text("");
-            $('#AjaxStatusId').text("");
-            addRemoveClass("AjaxStatusId", "badState", "goodState"); // assume the worst
-        }
-
-        function addRemoveClass(elemId, addClass, removeClass) {
-           $('#' + elemId).addClass(addClass).removeClass(removeClass);
-        }
-
-        $("#getStatusButton").click(jsonpGetStatus);
-        $("#clearButton").click(clearStatus);
-
-        jsonpGetStatus(); // initial state
-    });
+            jsonpGetStatus(); // initial state
+        });
     </script>
 
     <title>WebCat Startup</title>
-  </head>
+</head>
 <body>
-  <div class="container-fluid">
-    <div id="navbar" class="well row">
-      <div class="navbar-header">
-        <a class="navbar-brand" href="https://photoretakes.corp.amazon.com/badge-operations">Badge Printing Operations</a>
-      </div>
-    </div>
-    <h3>Welcome to the WebCat Startup Page</h3>
-    <p>
-      <ul>
-        <li>
-          Visit
-          <b><a href="https://photoretakes.corp.amazon.com/badge-operations">Badge Printing Operations</a></b>
-          to begin taking photos!
-        </li>
-      </ul>
-    </p>
-    <p></p>
-    <p>
-      Software Version: <b><span id="SoftwareVersionId"></span></b>
-      <br/>
-      Camera Status: <b><span class="goodState" id="AjaxStatusId"></span></b>
-    </p>
-    <div>
-      <pre  id="StatusDataId">
+<div id="header">
+    <a class="navbar-brand" href="https://photoretakes.corp.amazon.com/badge-operations">Badge Printing Operations</a>
+</div>
+<div class="container-fluid">
+    <div class="screen-card">
+        <div class="screen-card-header">
+            <h3>Welcome to the WebCat Startup Page</h3>
+        </div>
+        <div class="container-fluid">
+            <form id="searchForm">
+                <fieldset>
+                    <label for="locationSelect">Select Site</label>
+                    <select id="locationSelect" required="required" class="form-control">
+                        <option value="" selected="selected" disabled="">--</option>
+                        <option value="https://badging-global.corp.amazon.com/badge-operations">Global WebCAT</option>
+                        <option value="https://badging-us.corp.amazon.com/badge-operations">US WebCAT</option>
+                    </select>
+                </fieldset>
+                <button type="submit" id="locationSelectSubmit">Continue</button>
+            </form>
+            <p>
+                Software Version: <b><span id="SoftwareVersionId"></span></b>
+                <br/>
+                Camera Status: <b><span class="goodState" id="AjaxStatusId"></span></b>
+            </p>
+            <div>
+      <pre id="StatusDataId">
       </pre>
+            </div>
+            <div>
+                <button type="button" id="getStatusButton">Update Status</button>
+            </div>
+        </div>
     </div>
-    <div>
-      <button class="btn" id="getStatusButton">Update Status</button>
-    </div>
-  </div>
+</div>
 </body>
 </html>
